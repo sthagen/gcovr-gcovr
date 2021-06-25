@@ -8,6 +8,21 @@ Next Release
 
 Breaking changes:
 
+Improvements and new features:
+
+Documentation:
+
+Internal changes:
+
+ - Clean GCC environment variables in test suite. (:issue:`493`)
+ - Fix problems from deployment of release 5.0. (:issue:`494`)
+ - Use yaxmldiff for XML diffing in tests. (:issue:`495`)
+
+5.0 (11 June 2021)
+------------------
+
+Breaking changes:
+
  - Dropped support for Python 2 and Python 3.5.
    From now on, gcovr will only support Python versions
    that enjoy upstream support.
@@ -33,7 +48,7 @@ Improvements and new features:
  - Only remove :option:`--root` path at the start of file paths. (:issue:`452`)
  - Fix coverage report for cmake ninja builds with given in-source object-directory. (:issue:`453`)
  - Add issue templates. (:issue:`461`)
- - Add :option:`--exclude-function-lines` to exclude the line of the function definition in the coverage report. (:issue:`430`)  
+ - Add :option:`--exclude-function-lines` to exclude the line of the function definition in the coverage report. (:issue:`430`)
  - Changes for HTML output format:
 
    - Redesign HTML generation. Add :option:`--html-self-contained` to control externeal or internal CSS. (:issue:`367`)
@@ -42,7 +57,7 @@ Improvements and new features:
    - Add :option:`--html-tab-size` to configure tab size in HTML details. (:issue:`377`)
    - Add option :option:`--html-css` for user defined styling. (:issue:`380`)
    - Create details html filename independent from OS. (:issue:`375`)
-   - Add :option:`--html-theme` to change the color theme. (:issue:`381`)
+   - Add :option:`--html-theme` to change the color theme. (:issue:`393`)
    - Add linkable lines in HTML details. (:issue:`401`)
    - Add syntax highlighting in the details HTML report. This can be turned off with :option:`--no-html-details-syntax-highlighting <--html-details-syntax-highlighting>`. (:issue:`402`, :issue:`415`)
 
@@ -59,7 +74,7 @@ Internal changes:
  - Remove Appveyor CI and upload coverage report from Windows and Ubuntu from the GitHub actions. (:issue:`455`)
  - Add check if commit is mentioned in the CHANGELOG.rst. (:issue:`457`)
  - Move flake8 config to setup.cfg and add black code formatter. (:issue:`444`)
- - Fix filter/exclude relative path issue in Windows. (:issue:`320`, :issue:`479`) 
+ - Fix filter/exclude relative path issue in Windows. (:issue:`320`, :issue:`479`)
  - Extend test framework for CI:
 
    - Set make variable TEST_OPTS as environment variable inside docker. (:issue:`372`)
