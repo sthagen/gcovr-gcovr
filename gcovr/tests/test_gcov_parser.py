@@ -16,12 +16,15 @@
 #
 # ****************************************************************************
 
-import re
-import pytest
-import time
-from threading import Event
+# pylint: disable=missing-function-docstring,missing-module-docstring
 
-from ..gcov import GcovParser
+import re
+import time
+import textwrap
+from threading import Event
+import pytest
+
+from ..gcov_parser import ParserFlags, parse_coverage, UnknownLineType
 from ..utils import Logger
 from ..workers import Workers
 
@@ -167,7 +170,7 @@ call    4 never executed
 ------------------
     #####:   52:foo() ? bar():
         -:   53:  baz();  // above line tests that sections can be terminated
-    #####:   53:qux();
+    #####:   54:qux();
 """
 
 # This example is taken from the GCC 8 Gcov documentation:
@@ -262,19 +265,21 @@ GCOV_8_SOURCES = dict(
     gcov_8_example=GCOV_8_EXAMPLE,
     gcov_8_exclude_throw=GCOV_8_EXAMPLE,
     nautilus_example=GCOV_8_NAUTILUS,
-    gcov_8_example_2=GCOV_8_EXAMPLE_2)
+    gcov_8_example_2=GCOV_8_EXAMPLE_2,
+)
 
 GCOV_8_EXPECTED_UNCOVERED_LINES = dict(
-    gcov_8_example='33',
-    gcov_8_exclude_throw='33',
-    nautilus_example='51,53',
-    gcov_8_example_2='33')
+    gcov_8_example="33",
+    gcov_8_exclude_throw="33",
+    nautilus_example="51-52,54",
+    gcov_8_example_2="33",
+)
 
 GCOV_8_EXPECTED_UNCOVERED_BRANCHES = dict(
-    gcov_8_example='21,23,24,30,32,33,35',
-    gcov_8_exclude_throw='30,32,33',
-    nautilus_example='51',
-    gcov_8_example_2='21,23,24,30,32,33,35',
+    gcov_8_example="21,23,24,30,32,33,35",
+    gcov_8_exclude_throw="30,32,33",
+    nautilus_example="51",
+    gcov_8_example_2="21,23,24,30,32,33,35",
 )
 
 GCOV_8_EXCLUDE_THROW_BRANCHES = dict(
@@ -282,7 +287,7 @@ GCOV_8_EXCLUDE_THROW_BRANCHES = dict(
 )
 
 
-@pytest.mark.parametrize('sourcename', sorted(GCOV_8_SOURCES))
+@pytest.mark.parametrize("sourcename", sorted(GCOV_8_SOURCES))
 def test_gcov_8(capsys, sourcename):
     """Verify support for GCC 8 .gcov files.
 
@@ -293,29 +298,21 @@ def test_gcov_8(capsys, sourcename):
     """
 
     source = GCOV_8_SOURCES[sourcename]
-    lines = source.splitlines()[1:]
-    expected_uncovered_lines = \
-        GCOV_8_EXPECTED_UNCOVERED_LINES[sourcename]
-    expected_uncovered_branches = \
-        GCOV_8_EXPECTED_UNCOVERED_BRANCHES[sourcename]
-    exclude_throw_branches = \
-        GCOV_8_EXCLUDE_THROW_BRANCHES.get(sourcename, False)
+    lines = source.splitlines()
+    expected_uncovered_lines = GCOV_8_EXPECTED_UNCOVERED_LINES[sourcename]
+    expected_uncovered_branches = GCOV_8_EXPECTED_UNCOVERED_BRANCHES[sourcename]
 
-    parser = GcovParser("tmp.cpp", Logger())
-    parser.parse_all_lines(
-        lines,
-        exclude_unreachable_branches=False,
-        exclude_throw_branches=exclude_throw_branches,
-        ignore_parse_errors=False,
+    flags = ParserFlags.NONE
+    if GCOV_8_EXCLUDE_THROW_BRANCHES.get(sourcename, False):
+        flags |= ParserFlags.EXCLUDE_THROW_BRANCHES
+
+    coverage = parse_coverage(
+        filename="tmp.cpp",
+        lines=lines,
+        logger=Logger(),
         exclude_lines_by_pattern=None,
-        exclude_function_lines=False,
-        exclude_internal_functions=False,
+        flags=flags,
     )
-
-    covdata = {
-        parser.fname: parser.coverage,
-    }
-    coverage = covdata['tmp.cpp']
 
     uncovered_lines = coverage.uncovered_lines_str()
     uncovered_branches = coverage.uncovered_branches_str()
@@ -323,59 +320,52 @@ def test_gcov_8(capsys, sourcename):
     assert uncovered_branches == expected_uncovered_branches
 
     out, err = capsys.readouterr()
-    assert (out, err) == ('', '')
+    assert (out, err) == ("", "")
 
 
 def contains_phrases(string, *phrases):
-    phrase_re = re.compile(
-        '.*'.join(re.escape(p) for p in phrases),
-        flags=re.DOTALL)
+    phrase_re = re.compile(".*".join(re.escape(p) for p in phrases), flags=re.DOTALL)
     return bool(phrase_re.search(string))
 
 
-@pytest.mark.parametrize('ignore_errors', [True, False])
+@pytest.mark.parametrize("ignore_errors", [True, False])
 def test_unknown_tags(capsys, ignore_errors):
     source = r"bananas 7 times 3"
     lines = source.splitlines()
 
-    parser = GcovParser("foo.c", Logger())
+    flags = ParserFlags.NONE
+    if ignore_errors:
+        flags |= ParserFlags.IGNORE_PARSE_ERRORS
 
     def run_the_parser():
-        parser.parse_all_lines(
-            lines,
-            exclude_unreachable_branches=False,
-            exclude_throw_branches=False,
-            ignore_parse_errors=ignore_errors,
+        return parse_coverage(
+            filename="foo.c",
+            lines=lines,
+            logger=Logger(),
             exclude_lines_by_pattern=None,
-            exclude_function_lines=False,
-            exclude_internal_functions=False,
+            flags=flags,
         )
 
     if ignore_errors:
-        run_the_parser()
+        coverage = run_the_parser()
+
+        uncovered_lines = coverage.uncovered_lines_str()
+        uncovered_branches = coverage.uncovered_branches_str()
+        assert uncovered_lines == ""
+        assert uncovered_branches == ""
     else:
-        with pytest.raises(SystemExit):
-            run_the_parser()
-
-    covdata = {
-        parser.fname: parser.coverage,
-    }
-    coverage = covdata['foo.c']
-
-    uncovered_lines = coverage.uncovered_lines_str()
-    uncovered_branches = coverage.uncovered_branches_str()
-    assert uncovered_lines == ''
-    assert uncovered_branches == ''
+        with pytest.raises(Exception):
+            coverage = run_the_parser()
 
     out, err = capsys.readouterr()
-    assert out == ''
+    assert out == ""
     err_phrases = [
-        '(WARNING) Unrecognized GCOV output',
-        'bananas',
-        'github.com/gcovr/gcovr',
+        "(WARNING) Unrecognized GCOV output",
+        "bananas",
+        "github.com/gcovr/gcovr",
     ]
     if not ignore_errors:
-        err_phrases.append('(ERROR) Exiting')
+        err_phrases.append("(ERROR) Exiting")
     assert contains_phrases(err, *err_phrases)
 
 
@@ -383,28 +373,256 @@ def test_pathologic_codeline(capsys):
     source = r": 7:haha"
     lines = source.splitlines()
 
-    parser = GcovParser("foo.c", Logger())
-    with pytest.raises(IndexError):
-        parser.parse_all_lines(
-            lines,
-            exclude_unreachable_branches=False,
-            exclude_throw_branches=False,
-            ignore_parse_errors=False,
+    with pytest.raises(UnknownLineType):
+        parse_coverage(
+            filename="foo.c",
+            lines=lines,
+            logger=Logger(),
             exclude_lines_by_pattern=None,
-            exclude_function_lines=False,
-            exclude_internal_functions=False,
+            flags=ParserFlags.NONE,
         )
 
     out, err = capsys.readouterr()
-    assert out == ''
+    assert out == ""
     assert contains_phrases(
         err,
-        '(WARNING) Unrecognized GCOV output',
-        ': 7:haha',
-        'Exception during parsing',
-        'IndexError',
-        '(ERROR) Exiting',
-        'run gcovr with --gcov-ignore-parse-errors')
+        "(WARNING) Unrecognized GCOV output",
+        ": 7:haha",
+        "Exception during parsing",
+        "UnknownLineType",
+        "(ERROR) Exiting",
+        "run gcovr with --gcov-ignore-parse-errors",
+    )
+
+
+def test_exception_during_coverage_processing(capsys):
+    """
+    This cannot happen during normal processing, but as a defense against
+    unexpected changes to the format the ``--gcov-ignore-parse-errors`` option
+    will try to catch as many errors as possible. In order to inject a testable
+    fault, a misconfigured logger will be injected.
+    """
+
+    source = textwrap.dedent(
+        r"""
+    function __compiler-internal called 5 returned 6 blocks executed 7%
+          1: 3:magic code!
+    branch 0 taken 5%
+      #####: 4:recover here
+    """
+    )
+    lines = source.splitlines()
+
+    class BrokenLogger(Logger):  # pylint: disable=missing-class-docstring
+        def verbose_msg(self, pattern, *args, **kwargs):
+            raise AssertionError("totally broken")
+
+    with pytest.raises(AssertionError) as ex_info:
+        parse_coverage(
+            lines,
+            logger=BrokenLogger(verbose=True),
+            filename="test.cpp",
+            exclude_lines_by_pattern=None,
+            flags=ParserFlags.EXCLUDE_INTERNAL_FUNCTIONS,
+        )
+
+    # check that this is our exception
+    assert ex_info.value.args[0] == "totally broken"
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert err != ""
+    assert contains_phrases(
+        err,
+        "(WARNING) Unrecognized GCOV output",
+        lines[0],
+        "Exception during parsing",
+        "AssertionError",
+        "(ERROR) Exiting",
+        "run gcovr with --gcov-ignore-parse-errors",
+    )
+
+
+def test_trailing_function_tag():
+    """
+    This cannot occur in real gcov, but the parser should be robust enough to
+    handle it.
+    """
+
+    source = textwrap.dedent(
+        """\
+      #####: 2:example line
+    function example called 17 returned 16 blocks executed 3
+    """
+    )
+
+    coverage = parse_coverage(
+        source.splitlines(),
+        filename="test.cpp",
+        logger=Logger(),
+        flags=ParserFlags.NONE,
+        exclude_lines_by_pattern=None,
+    )
+
+    assert coverage.functions.keys() == {"example"}
+    fcov = coverage.functions["example"]
+    assert fcov.lineno == 3  # previous lineno + 1
+    assert fcov.name == "example"
+    assert fcov.count == 17  # number of calls
+
+
+@pytest.mark.parametrize(
+    "flags",
+    [
+        ParserFlags.NONE,
+        ParserFlags.EXCLUDE_UNREACHABLE_BRANCHES,
+        ParserFlags.EXCLUDE_THROW_BRANCHES,
+        ParserFlags.EXCLUDE_UNREACHABLE_BRANCHES | ParserFlags.EXCLUDE_THROW_BRANCHES,
+    ],
+)
+def test_branch_exclusion(flags):
+    """
+    On some lines, branch coverage may be discarded.
+    """
+
+    source = textwrap.dedent(
+        """\
+          1: 1: normal line
+        branch 1 taken 80%
+          1: 2: } // line without apparent code
+        branch 2 taken 70%
+          1: 3: exception-only code
+        branch 3 taken 60% (throw)
+          1: 4: } // no code and throw
+        branch 4 taken 50% (throw)
+        """
+    )
+
+    expected_covered_branches = {1, 2, 3, 4}
+    if flags & ParserFlags.EXCLUDE_THROW_BRANCHES:
+        expected_covered_branches -= {3, 4}
+    if flags & ParserFlags.EXCLUDE_UNREACHABLE_BRANCHES:
+        expected_covered_branches -= {2, 4}
+
+    coverage = parse_coverage(
+        source.splitlines(),
+        logger=Logger(),
+        filename="example.cpp",
+        exclude_lines_by_pattern=None,
+        flags=flags,
+    )
+
+    covered_branches = {
+        branch for line in coverage.lines.values() for branch in line.branches.keys()
+    }
+
+    assert covered_branches == expected_covered_branches
+
+
+@pytest.mark.parametrize(
+    "flags", [ParserFlags.NONE, ParserFlags.EXCLUDE_INTERNAL_FUNCTIONS]
+)
+def test_function_exclusion(flags):
+    """
+    Compiler-generated function names can be excluded.
+    """
+
+    source = textwrap.dedent(
+        """\
+        function __foo called 5 returned 50% blocks executed 70%
+          12: 5:void __foo() {
+        """
+    )
+
+    if flags & ParserFlags.EXCLUDE_INTERNAL_FUNCTIONS:
+        expected_functions = []
+    else:
+        expected_functions = ["__foo"]
+
+    coverage = parse_coverage(
+        source.splitlines(),
+        logger=Logger(),
+        filename="example.cpp",
+        exclude_lines_by_pattern=None,
+        flags=flags,
+    )
+
+    functions = list(coverage.functions.keys())
+
+    assert functions == expected_functions
+
+
+def test_noncode_lines():
+    """
+    Verify how noncode status is used.
+
+    Gcov marks some lines as not containing any coverage data::
+
+        -: 42: // no code
+
+    But gcovr has a differing concept of "noncode"
+    that sometimes removes lines entirely,
+    sometimes adds a line with "noncode" status,
+    and sometimes shows an uncovered line.
+    """
+
+    def get_line_status(
+        lines: list,
+        *,
+        flags: ParserFlags = ParserFlags.NONE,
+    ):
+        coverage = parse_coverage(
+            lines,
+            flags=flags,
+            logger=Logger(),
+            filename="example.cpp",
+            exclude_lines_by_pattern=None,
+        )
+
+        for line_data in coverage.lines.values():
+            if line_data.noncode:
+                status = "noncode"
+            else:
+                status = "normal"
+            return f"{status}:{line_data.count}"
+
+        return "excluded"
+
+    # First, handling of function lines
+
+    # By itself, function lines have no special treatment.
+    status = get_line_status(["3: 32:void foo(){}"])
+    assert status == "normal:3"
+
+    # If gcov reports a function, keep the line.
+    status = get_line_status(
+        ["function foo called 3 returned 99% blocks executed 70%", "3: 32:void foo(){}"]
+    )
+    assert status == "normal:3"
+
+    # But if EXCLUDE_FUNCTION_LINES is enabled, discard the line.
+    status = get_line_status(
+        [
+            "function foo called 3 returned 99% blocks executed 70%",
+            "3: 32:void foo(){}",
+        ],
+        flags=ParserFlags.EXCLUDE_FUNCTION_LINES,
+    )
+    assert status == "noncode:0"
+
+    # Next, handling of noncode lines
+
+    # Gcov says noncode but it looks like code: throw line away
+    assert get_line_status(["-: 32:this looks like code"]) == "excluded"
+
+    # Gcov says noncode and it doesn't look like code: keep with noncode status
+    assert get_line_status(["-: 32:}"]) == "noncode:0"
+
+    # Uncovered line with code: keep
+    assert get_line_status(["#####: 32:looks like code"]) == "normal:0"
+
+    # Uncovered code that doesn't look like code: keep with noncode status
+    assert get_line_status(["#####: 32:}"]) == "noncode:0"
 
 
 def check_and_raise(number, mutable, exc_raised, queue_full):
@@ -415,13 +633,20 @@ def check_and_raise(number, mutable, exc_raised, queue_full):
     mutable.append(None)
 
 
-@pytest.mark.parametrize('threads', [1, 2, 4, 8])
-def test_pathologic_threads(capsys, threads):
+@pytest.mark.parametrize("threads", [1, 2, 4, 8])
+def test_pathologic_threads(threads):
     mutable = []
     queue_full = Event()
     exc_raised = Event()
     with pytest.raises(Exception) as excinfo:
-        with Workers(threads, lambda: {'mutable': mutable, 'exc_raised': exc_raised, 'queue_full': queue_full}) as pool:
+        with Workers(
+            threads,
+            lambda: {
+                "mutable": mutable,
+                "exc_raised": exc_raised,
+                "queue_full": queue_full,
+            },
+        ) as pool:
             for extra in range(0, 10000):
                 pool.add(check_and_raise, extra)
 

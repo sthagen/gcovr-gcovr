@@ -11,6 +11,7 @@ Breaking changes:
 Improvements and new features:
 
 - Add function coverage metric (:issue:`362`)
+- Deactivate localization of gcov by setting LC_ALL=C instead of LC_ALL=en_US (:issue:`513`)
 
 Documentation:
 
@@ -23,6 +24,7 @@ Internal changes:
  - Fix problems from deployment of release 5.0. (:issue:`494`)
  - Use yaxmldiff for XML diffing in tests. (:issue:`495`)
  - Change test and reference for XML diff to be the same as for the unified diff. (:issue:`509`)
+ - New parser for ``.gcov`` file format, should be more robust. (:issue:`512`)
 
 5.0 (11 June 2021)
 ------------------
