@@ -21,6 +21,9 @@ pip-log.txt
 # wheel
 gcovr-*/
 
+# nox
+.nox*/
+
 # Translations
 *.mo
 
@@ -34,6 +37,8 @@ gcovr-*/
 
 # VS Code
 .vscode
+*.code-workspace
 
 # PyCharm
 .idea
+

@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 5.0, a parsing and reporting tool for gcov.
+# This file is part of gcovr 5.1, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/stable
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2021 the gcovr authors
+# Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -16,11 +16,16 @@
 #
 # ****************************************************************************
 
+from __future__ import annotations
 from argparse import ArgumentTypeError
+from typing import Type
+import logging
 import os
 import re
 import sys
 from contextlib import contextmanager
+
+logger = logging.getLogger("gcovr")
 
 
 class LoopChecker(object):
@@ -35,6 +40,34 @@ class LoopChecker(object):
 
         self._seen.add(key)
         return False
+
+
+if (sys.platform == "win32") and (sys.version_info < (3, 8)):
+    # Only used for old python versions. Function can be treated as stable.
+    from nt import _getfinalpathname
+
+    DOS_DEVICE_PATH_PREFIX = "\\\\?\\"
+    DOS_DEVICE_PATH_PREFIX_UNC = DOS_DEVICE_PATH_PREFIX + "UNC\\"
+
+    def realpath(path):
+        path = os.path.realpath(path)
+        # If file exist try to resolve the symbolic links
+        if os.path.exists(path):
+            has_prefix = path.startswith(DOS_DEVICE_PATH_PREFIX)
+            path = _getfinalpathname(path)
+            if not has_prefix and path.startswith(DOS_DEVICE_PATH_PREFIX):
+                if path.startswith(DOS_DEVICE_PATH_PREFIX_UNC):
+                    path = path[len(DOS_DEVICE_PATH_PREFIX_UNC) :]
+                else:
+                    path = path[len(DOS_DEVICE_PATH_PREFIX) :]
+        return path
+
+else:
+    realpath = os.path.realpath
+
+
+def get_os_independent_path(path):
+    return path.replace(os.path.sep, "/")
 
 
 def search_file(predicate, path, exclude_dirs):
@@ -54,14 +87,16 @@ def search_file(predicate, path, exclude_dirs):
             dirs[:] = []
             continue
 
-        dirs[:] = [d for d in dirs
-                   if not any(exc.match(os.path.join(root, d))
-                              for exc in exclude_dirs)]
-        root = os.path.realpath(root)
+        dirs[:] = [
+            d
+            for d in dirs
+            if not any(exc.match(os.path.join(root, d)) for exc in exclude_dirs)
+        ]
+        root = os.path.abspath(root)
 
         for name in files:
             if predicate(name):
-                yield os.path.realpath(os.path.join(root, name))
+                yield os.path.abspath(os.path.join(root, name))
 
 
 def commonpath(files):
@@ -85,13 +120,12 @@ def commonpath(files):
         Returns the empty string if no common path exists.
     """
     if not files:
-        return ''
+        return ""
 
     if len(files) == 1:
-        prefix_path = os.path.dirname(os.path.realpath(files[0]))
+        prefix_path = os.path.dirname(realpath(files[0]))
     else:
-        split_paths = [os.path.realpath(path).split(os.path.sep)
-                       for path in files]
+        split_paths = [realpath(path).split(os.path.sep) for path in files]
         # We only have to compare the lexicographically minimum and maximum
         # paths to find the common prefix of all, e.g.:
         #   /a/b/c/d  <- min
@@ -111,7 +145,7 @@ def commonpath(files):
 
     # make the path relative and add a trailing slash
     if prefix_path:
-        prefix_path = os.path.join(os.path.relpath(prefix_path), '')
+        prefix_path = os.path.join(os.path.relpath(prefix_path), "")
     return prefix_path
 
 
@@ -145,9 +179,37 @@ def get_global_stats(covdata):
     percent_functions = calculate_coverage(functions_covered, functions_total)
     percent_branches = calculate_coverage(branches_covered, branches_total)
 
-    return (lines_total, lines_covered, percent,
-            functions_total, functions_covered, percent_functions,
-            branches_total, branches_covered, percent_branches)
+    return (
+        lines_total,
+        lines_covered,
+        percent,
+        functions_total,
+        functions_covered,
+        percent_functions,
+        branches_total,
+        branches_covered,
+        percent_branches,
+    )
+
+
+def summarize_file_coverage(coverage, root_filter):
+    filename = presentable_filename(coverage.filename, root_filter=root_filter)
+
+    branch_total, branch_covered, branch_percent = coverage.branch_coverage()
+    line_total, line_covered, line_percent = coverage.line_coverage()
+    function_total, function_covered, function_percent = coverage.function_coverage()
+    return (
+        filename,
+        line_total,
+        line_covered,
+        line_percent,
+        branch_total,
+        branch_covered,
+        branch_percent,
+        function_total,
+        function_covered,
+        function_percent,
+    )
 
 
 def calculate_coverage(covered, total, nan_value=0.0):
@@ -161,24 +223,32 @@ def calculate_coverage(covered, total, nan_value=0.0):
     return coverage
 
 
-class FilterOption(object):
+class FilterOption:
+    NonEmpty: Type[NonEmptyFilterOption]
+
     def __init__(self, regex, path_context=None):
         self.regex = regex
         self.path_context = os.getcwd() if path_context is None else path_context
 
-    def build_filter(self, logger):
+    def build_filter(self):
         # Try to detect unintended backslashes and warn.
         # Later, the regex engine may or may not raise a syntax error.
         # An unintended backslash is a literal backslash r"\\",
         # or a regex escape that doesn't exist.
         (suggestion, bs_count) = re.subn(
-            r'\\\\|\\(?=[^\WabfnrtuUvx0-9AbBdDsSwWZ])', '/', self.regex)
+            r"\\\\|\\(?=[^\WabfnrtuUvx0-9AbBdDsSwWZ])", "/", self.regex
+        )
         if bs_count:
-            logger.warn("filters must use forward slashes as path separators")
-            logger.warn("your filter : {}", self.regex)
-            logger.warn("did you mean: {}", suggestion)
+            logger.warning("filters must use forward slashes as path separators")
+            logger.warning(f"your filter : {self.regex}")
+            logger.warning(f"did you mean: {suggestion}")
 
-        if os.path.isabs(self.regex):
+        isabs = self.regex.startswith("/")
+        if not isabs and (sys.platform == "win32"):
+            # Starts with a drive letter
+            isabs = re.match(r"^[A-Za-z]:/", self.regex)
+
+        if isabs:
             return AbsoluteFilter(self.regex)
         else:
             return RelativeFilter(self.path_context, self.regex)
@@ -199,47 +269,51 @@ class Filter(object):
         cwd = os.getcwd()
         # Guessing if file system is case insensitive.
         # The working directory is not the root and accessible in upper and lower case.
-        is_fs_case_insensitive = (cwd != os.path.sep) and os.path.exists(cwd.upper()) and os.path.exists(cwd.lower())
+        is_fs_case_insensitive = (
+            (cwd != os.path.sep)
+            and os.path.exists(cwd.upper())
+            and os.path.exists(cwd.lower())
+        )
         flags = re.IGNORECASE if is_fs_case_insensitive else 0
         self.pattern = re.compile(pattern, flags)
 
     def match(self, path):
-        os_independent_path = path.replace(os.path.sep, '/')
+        os_independent_path = get_os_independent_path(path)
         return self.pattern.match(os_independent_path)
 
     def __str__(self):
         return "{name}({pattern})".format(
-            name=type(self).__name__, pattern=self.pattern.pattern)
+            name=type(self).__name__, pattern=self.pattern.pattern
+        )
 
 
 class AbsoluteFilter(Filter):
     def match(self, path):
-        abspath = os.path.realpath(path)
-        return super(AbsoluteFilter, self).match(abspath)
+        path = realpath(path)
+        return super(AbsoluteFilter, self).match(path)
 
 
 class RelativeFilter(Filter):
     def __init__(self, root, pattern):
         super(RelativeFilter, self).__init__(pattern)
-        self.root = root
+        self.root = realpath(root)
 
     def match(self, path):
-        abspath = os.path.realpath(path)
+        path = realpath(path)
 
         # On Windows, a relative path can never cross drive boundaries.
         # If so, the relative filter cannot match.
-        if sys.platform == 'win32':
-            path_drive, _ = os.path.splitdrive(abspath)
-            root_drive, _ = os.path.splitdrive(os.path.realpath(self.root))
+        if sys.platform == "win32":
+            path_drive, _ = os.path.splitdrive(path)
+            root_drive, _ = os.path.splitdrive(self.root)
             if path_drive != root_drive:
                 return None
 
-        relpath = os.path.relpath(abspath, self.root)
+        relpath = os.path.relpath(path, self.root)
         return super(RelativeFilter, self).match(relpath)
 
     def __str__(self):
-        return "RelativeFilter({} root={})".format(
-            self.pattern.pattern, self.root)
+        return "RelativeFilter({} root={})".format(self.pattern.pattern, self.root)
 
 
 class AlwaysMatchFilter(Filter):
@@ -252,58 +326,34 @@ class AlwaysMatchFilter(Filter):
 
 class DirectoryPrefixFilter(Filter):
     def __init__(self, directory):
-        abspath = os.path.realpath(directory)
-        os_independent_dir = abspath.replace(os.path.sep, '/')
-        pattern = re.escape(os_independent_dir + '/')
+        path = realpath(directory)
+        os_independent_path = get_os_independent_path(path)
+        pattern = re.escape(f"{os_independent_path}/")
         super(DirectoryPrefixFilter, self).__init__(pattern)
 
     def match(self, path):
-        normpath = os.path.normpath(path)
-        return super(DirectoryPrefixFilter, self).match(normpath)
+        realpath = os.path.normpath(path)
+        return super(DirectoryPrefixFilter, self).match(realpath)
 
 
-class Logger(object):
-    def __init__(self, verbose=False):
-        self.verbose = verbose
+def configure_logging() -> None:
+    logging.basicConfig(
+        format="(%(levelname)s) %(message)s",
+        stream=sys.stderr,
+        level=logging.INFO,
+    )
 
-    def warn(self, pattern, *args, **kwargs):
-        """Write a formatted warning to STDERR.
+    def exception_hook(exc_type, exc_value, exc_traceback) -> None:
+        logging.exception(
+            "Uncaught EXCEPTION", exc_info=(exc_type, exc_value, exc_traceback)
+        )
 
-        pattern: a str.format pattern
-        args, kwargs: str.format arguments
-        """
-        pattern = "(WARNING) " + pattern + "\n"
-        sys.stderr.write(pattern.format(*args, **kwargs))
-
-    def error(self, pattern, *args, **kwargs):
-        """Write a formatted error to STDERR.
-
-        pattern: a str.format pattern
-        args, kwargs: str.format parameters
-        """
-        pattern = "(ERROR) " + pattern + "\n"
-        sys.stderr.write(pattern.format(*args, **kwargs))
-
-    def msg(self, pattern, *args, **kwargs):
-        """Write a formatted message to STDOUT.
-
-        pattern: a str.format pattern
-        args, kwargs: str.format arguments
-        """
-        pattern = pattern + "\n"
-        sys.stdout.write(pattern.format(*args, **kwargs))
-
-    def verbose_msg(self, pattern, *args, **kwargs):
-        """Write a formatted message to STDOUT if in verbose mode.
-
-        see: self.msg()
-        """
-        if self.verbose:
-            self.msg(pattern, *args, **kwargs)
+    sys.excepthook = exception_hook
 
 
-def sort_coverage(covdata, show_branch,
-                  by_num_uncovered=False, by_percent_uncovered=False):
+def sort_coverage(
+    covdata, show_branch, by_num_uncovered=False, by_percent_uncovered=False
+):
     """Sort a coverage dict.
 
     covdata (dict): the coverage dictionary
@@ -313,17 +363,20 @@ def sort_coverage(covdata, show_branch,
 
     returns: the sorted keys
     """
+
     def num_uncovered_key(key):
         cov = covdata[key]
-        (total, covered, _) = \
+        (total, covered, _) = (
             cov.branch_coverage() if show_branch else cov.line_coverage()
+        )
         uncovered = total - covered
         return uncovered
 
     def percent_uncovered_key(key):
         cov = covdata[key]
-        (total, covered, _) = \
+        (total, covered, _) = (
             cov.branch_coverage() if show_branch else cov.line_coverage()
+        )
         if covered:
             return -1.0 * covered / total
         elif total:
@@ -350,8 +403,8 @@ def open_text_for_writing(filename=None, default_filename=None, **kwargs):
     if filename is not None and filename.endswith(os.sep):
         filename += default_filename
 
-    if filename is not None and filename != '-':
-        fh = open(filename, 'w', **kwargs)
+    if filename is not None and filename != "-":
+        fh = open(filename, "w", **kwargs)
         close = True
     else:
         fh = sys.stdout
@@ -373,9 +426,9 @@ def open_binary_for_writing(filename=None, default_filename=None, **kwargs):
     if filename is not None and filename.endswith(os.sep):
         filename += default_filename
 
-    if filename is not None and filename != '-':
+    if filename is not None and filename != "-":
         # files in write binary mode for UTF-8
-        fh = open(filename, 'wb', **kwargs)
+        fh = open(filename, "wb", **kwargs)
         close = True
     else:
         fh = sys.stdout.buffer
@@ -392,32 +445,15 @@ def presentable_filename(filename, root_filter):
     # type: (str, re.Regex) -> str
     """mangle a filename so that it is suitable for a report"""
 
-    normalized = root_filter.sub('', filename)
+    normalized = root_filter.sub("", filename)
     if filename.endswith(normalized):
         # remove any slashes between the removed prefix and the normalized name
         if filename != normalized:
             while normalized.startswith(os.path.sep):
-                normalized = normalized[len(os.path.sep):]
+                normalized = normalized[len(os.path.sep) :]
     else:
         # Do no truncation if the filter does not start matching
         # at the beginning of the string
         normalized = filename
 
-    return normalized.replace('\\', '/')
-
-
-def fixup_percent(percent):
-    # output csv percent values in range [0,1.0]
-    return percent / 100 if percent is not None else None
-
-
-def summarize_file_coverage(coverage, root_filter):
-    filename = presentable_filename(
-        coverage.filename, root_filter=root_filter)
-
-    branch_total, branch_covered, branch_percent = coverage.branch_coverage()
-    line_total, line_covered, line_percent = coverage.line_coverage()
-    function_total, function_covered, function_percent = coverage.function_coverage()
-    return (filename, line_total, line_covered, fixup_percent(line_percent),
-            branch_total, branch_covered, fixup_percent(branch_percent),
-            function_total, function_covered, fixup_percent(function_percent))
+    return normalized.replace("\\", "/")

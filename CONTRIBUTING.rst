@@ -71,7 +71,7 @@ Please follow this checklist for your pull request:
 -   **Does it work?**
     Please run the tests locally::
 
-        make test
+        python3 -m nox
 
     (see also: :ref:`test suite`)
 
@@ -92,13 +92,13 @@ Please follow this checklist for your pull request:
     The source code should conform to the :pep:`8` standard.
     Please check your code::
 
-        make lint
+        python3 -m nox --session lint
 
         # or:
 
-        python3 -m flake8 doc gcovr --ignore E501,W503
+        python3 -m flake8 doc gcovr
 
-    The command ``make qa`` will run the linter, run the tests,
+    The command ``python3 -m nox`` will run the linter, run the tests,
     and check that the docs can be built.
 
 -   **Add yourself as an author.**
@@ -145,8 +145,8 @@ How to set up a development environment
 
 For working on gcovr, you will need a supported version of Python 3,
 GCC version 5, 6 or 8 (other GCC versions are supported by gcovr,
-but will cause spurious test failures), ``make``, ``cmake`` and
-``ninja``.
+but will cause spurious test failures) or clang version 10, ``make``,
+``cmake`` and ``ninja``.
 Please make sure that the tools are in the system ``PATH``.
 On **Windows**, you will need to install a GCC toolchain as the
 tests expect a Unix-like environment. You can use MinGW-W64 or MinGW.
@@ -156,11 +156,14 @@ is needed.
 
 -   Check your GCC installation, the binary directory must be added to
     the PATH environment. If the command gcc-5/g++-5/gcov-5,
-    gcc-6/g++-6/gcov-6, gcc-8/g++-8/gcov-8 or clang-10/clang++-10/llvm-cov
+    gcc-6/g++-6/gcov-6, gcc-8/g++-8/gcov-8, gcc-9/g++-9/gcov-9,
+    clang-10/clang++-10/llvm-cov or clang-13/clang++-13/llvm-cov
     are available everything is OK.
-    For gcc-6 and gcc-8 you should use the option ``CC=...```
-    see :ref:`run and filter tests <run tests>`. If this isn't OK you
-    have to create symlinks for the gcc executables with the following steps.
+    For gcc-6, gcc-8, gcc-9, clang-10 and clang-13 you should use the
+    option ``CC=...`` see :ref:`run and filter tests <run tests>`.
+    If this isn't OK you
+    can set the reference data to use by setting the environment ``CC_REFERENCE=gcc-8``
+    or you have to create symlinks for the gcc executables with the following steps.
     You can check the GCC version with gcc --version. If the output says
     version 8, you should also be able to run gcc-8 --version. Your Linux
     distribution should have set all of this up already.
@@ -180,25 +183,14 @@ is needed.
 
 -   (Optional) Set up a virtualenv (e.g. with ``python3 -m venv my-venv``)
 
--   Install gcovr in development mode, and install the test requirements::
-
-        make setup-dev  # install all test + doc dependencies
-
-        # or:
+-   Install gcovr in development mode, and install nox::
 
         pip install -e .
-        pip install -r requirements.txt
+        pip install nox
 
     You can then run gcovr as ``gcovr`` or ``python3 -m gcovr``.
 
     Run the tests to verify that everything works (see :ref:`test suite`).
-
--   (Optional) Install documentation requirements::
-
-        # would be already done by `make setup-dev`
-        pip install -r doc/requirements.txt
-
-    See ``doc/README.txt`` for details on working with the documentation.
 
 -   (Optional) Activate GitHub Actions for your forked repository,
     so that the cross-platform compatibility tests get run
@@ -224,6 +216,7 @@ Path                    Description
 ``/gcovr/__main__.py``  command line interface + top-level behaviour
 ``/gcovr/templates/``   HTML report templates
 ``/gcovr/tests/``       unit tests + integration test corpus
+``/noxfile.py``         Definition of tests tasks
 ``/setup.py``           Python package configuration
 ``/doc/``               documentation
 ``/doc/sources/``       user guide + website
@@ -240,27 +233,32 @@ are in ``gcovr.generator.html`` and respective modules.
 Test suite
 ----------
 
-The QA process (``make qa``) consists of multiple parts:
+The QA process (``python3 -m nox``) consists of multiple parts:
 
-- linting (``make lint``)
+- linting and checking format(``python3 -m nox --session lint``)
 
-- checking format (``make check-format``)
-
-- tests (``make test``)
+- tests (``python3 -m nox --session tests``)
 
    - unit tests in ``gcovr/tests``
    - integration tests in ``gcovr/tests``
    - documentation examples in ``doc/examples``
 
-- documentation build (``make doc``)
+- documentation build (``python3 -m nox --session doc``)
 
 The tests are in the ``gcovr/tests`` directory.
-You can run the tests with ``make test`` or ``python3 -m pytest -- gcovr doc/examples``.
+You can run the tests with ``python3 -m nox --session tests``
+for the default GCC version (specified via ``CC`` environment variable, defaults to gcc-5).
+You can also select the gcc version if you run the tests with e.g.
+``python3 -m nox --session 'tests_compiler(gcc-8)'``.
 
 There are unit tests for some parts of gcovr,
 and a comprehensive corpus of example projects
 that are executed as the ``test_gcovr.py`` integration test.
 Each ``gcovr/tests/*`` directory is one such example project.
+
+You can format files with ``python3 -m nox --session black FileToFormat``)
+
+To get a list of all available sessions run ``python3 -m nox -l``.
 
 The next sections discuss
 the :ref:`structure of integration tests <integration tests>`,
@@ -308,53 +306,57 @@ Each Makefile contains the following targets:
 Run and filter tests
 ~~~~~~~~~~~~~~~~~~~~
 
-To run all tests, use ``make test`` or ``make qa``.
+To run all tests, use ``python3 -m nox``.
 The tests currently assume that you are using GCC 5
 and have set up a :ref:`development environment <development environment>`.
-You can select a different GCC version by setting the CC argument.
-Supported versions are ``CC=gcc-5``, ``CC=gcc-6``, ``CC=gcc-8`` and ``clang-10``.
+You can select a different GCC version by setting the CC environment variable.
+Supported versions are ``CC=gcc-5``, ``CC=gcc-6``, ``CC=gcc-8``, ``CC=gcc-9``,
+``clang-10`` and ``clang-13``.
 
-You can run the tests with additional options by setting ``TEST_OPTS`` variable.
-Run all tests after each change is a bit slow, therefore you can limit the tests
-to a specific test file, example project, or output format.
+You can run the tests with additional options by adding ``--`` and then the options
+to the test invocation. Run all tests after each change is a bit slow, therefore you can
+limit the tests to a specific test file, example project, or output format.
 For example:
 
 .. code:: bash
 
     # run only XML tests
-    make test TEST_OPTS="-k 'xml'"
+    python3 -m nox --session tests -- -k 'xml'
 
     # run the simple1 tests
-    make test TEST_OPTS="-k 'simple1'"
+    python3 -m nox --session tests -- -k 'simple1'
 
     # run the simple1 tests only for XML
-    make test TEST_OPTS="-k 'xml and simple1'"
+    python3 -m nox --session tests -- -k 'xml and simple1'
 
 To see which tests would be run, add the ``--collect-only`` option:
 
 .. code:: bash
 
     #see which tests would be run
-    make test TEST_OPTS="--collect-only"
+    python3 -m nox --session tests -- --collect-only
 
 Sometimes during development you need to create reference files for new test
 or update the current reference files. To do this you have to
 add ``--generate_reference`` or ``--update-reference`` option
-to the ``TEST_OPTS`` variable.
+to the test invocation.
 By default generated output files are automatically removed after test run.
-To skip this process you can add ``--skip_clean`` option the ``TEST_OPTS``.
+To skip this process you can add ``--skip_clean`` option the test invocation.
 For example:
 
 .. code:: bash
 
     # run tests and generate references for simple1 example
-    make test TEST_OPTS="-k 'simple1' --generate_reference"
+    python3 -m nox --session tests -- -k 'simple1' --generate_reference
 
     # run tests and update xml references for simple1 example
-    make test TEST_OPTS="-k 'xml and simple1' --update_reference"
+    python3 -m nox --session tests -- -k 'xml and simple1' --update_reference
 
     # run only XML tests and do not remove generated files
-    make test TEST_OPTS="-k 'xml' --skip_clean"
+    python3 -m nox --session tests -- -k 'xml' --skip_clean
+
+To update the refernce data for all compiler in one call see
+:ref:`run tests with Docker <docker tests>`.
 
 When the currently generated output reports differ to the reference files
 you can create a ZIP archive named ``diff.zip`` in the tests directory
@@ -365,7 +367,10 @@ with the differences as an artifact.
 .. code:: bash
 
     # run tests and generate a ZIP archive when there were differences
-    make test TEST_OPTS="--archive_differences"
+    python3 -m nox --session tests -- --archive_differences
+
+.. versionchanged:: 5.1
+    Change how to start test from ``make test`` to ``python3 -m nox --session tests``
 
 .. versionadded:: 5.0
    Added test options `--generate_reference`, `--update_reference`,
@@ -382,16 +387,34 @@ First, build the container image:
 
 .. code:: bash
 
-    make docker-qa-build
+    python3 -m nox --session docker_qa_build
 
-Then, run the container, which executes ``make qa`` within the container:
+Then, run the container, which executes ``python3 -m nox`` within the container:
 
 .. code:: bash
 
-    make docker-qa
+    python3 -m nox --session docker_qa_run
 
-You can select the gcc version to use inside the docker by setting the make
-variable CC to gcc-5 (default), gcc-6, gcc-8 or clang-10
+Or to build and run the container in one step:
+
+.. code:: bash
+
+    python3 -m nox --session docker_qa
+
+You can select the gcc version to use inside the docker by setting the environment
+variable CC to gcc-5 (default), gcc-6, gcc-8, gcc-9, clang-10 or clang-13 or you
+can build and run the container with:
+
+.. code:: bash
+
+    python3 -m nox --session 'docker_qa_compiler(gcc-9)'
+
+You can also use the compiler 'all' to run the tests for all compiler versions.
+This is usefull to update the all reference files:
+
+.. code:: bash
+
+    python3 -m nox --session 'docker_qa_compiler(all)' -- --update_reference
 
 .. _join:
 

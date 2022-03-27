@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 5.0, a parsing and reporting tool for gcov.
+# This file is part of gcovr 5.1, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/stable
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2021 the gcovr authors
+# Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -25,6 +25,7 @@ class LockedDirectories(object):
     """
     Class that keeps a list of locked directories
     """
+
     def __init__(self):
         self.dirs = set()
         self.cv = Condition()
@@ -76,6 +77,7 @@ def worker(queue, context, pool):
             work(*args, **kwargs)
         except:  # noqa: E722
             import sys
+
             pool.raise_exception(sys.exc_info())
             break
 
@@ -87,12 +89,14 @@ class Workers(object):
     """
 
     def __init__(self, number, context):
-        assert(number >= 1)
+        assert number >= 1
         self.q = Queue()
         self.lock = RLock()
         self.exceptions = []
         self.contexts = [context() for _ in range(0, number)]
-        self.workers = [Thread(target=worker, args=(self.q, c, self)) for c in self.contexts]
+        self.workers = [
+            Thread(target=worker, args=(self.q, c, self)) for c in self.contexts
+        ]
         for w in self.workers:
             w.start()
 
@@ -151,6 +155,7 @@ class Workers(object):
                 w.join(timeout=1)
         for exc_type, exc_obj, exc_trace in self.exceptions:
             import traceback
+
             traceback.print_exception(exc_type, exc_obj, exc_trace)
         if self.exceptions:
             raise self.exceptions[0][1]

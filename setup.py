@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 5.0, a parsing and reporting tool for gcov.
+# This file is part of gcovr 5.1, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/stable
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2021 the gcovr authors
+# Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -36,13 +36,10 @@ long_description = re.sub(
     r"^\.\. image:: \./",
     r".. image:: https://raw.githubusercontent.com/gcovr/gcovr/{}/".format(version),
     long_description,
-    flags=re.MULTILINE
+    flags=re.MULTILINE,
 )
 long_description = re.sub(
-    r":option:`(.*?)<gcovr.*?>`",
-    r"``\1``",
-    long_description,
-    flags=re.MULTILINE
+    r":option:`(.*?)<gcovr.*?>`", r"``\1``", long_description, flags=re.MULTILINE
 )
 
 setup(
@@ -51,7 +48,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/x-rst",
     platforms=["any"],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     packages=find_packages(include=["gcovr*"], exclude=["gcovr.tests"]),
     install_requires=["jinja2", "lxml", "pygments"],
     package_data={

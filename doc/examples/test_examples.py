@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 5.0, a parsing and reporting tool for gcov.
+# This file is part of gcovr 5.1, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/stable
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2021 the gcovr authors
+# Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -18,11 +18,14 @@
 
 import glob
 import os
+import platform
 import pytest
 import subprocess
 import sys
 
 from gcovr.tests.test_gcovr import SCRUBBERS, ASSERT_EQUALS
+
+IS_MACOS = platform.system() == "Darwin"
 
 datadir = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,23 +40,35 @@ class Example(object):
         return os.path.basename(self.baseline)
 
 
+def is_compiler(actual: str, *expected: str) -> bool:
+    return any(compiler in actual for compiler in expected)
+
+
 def find_test_cases():
-    if sys.platform.startswith('win'):
+    if sys.platform.startswith("win"):
         return
-    for script in glob.glob(datadir + '/*.sh'):
+    for script in glob.glob(datadir + "/*.sh"):
         basename = os.path.basename(script)
         name, _ = os.path.splitext(basename)
-        for ext in 'txt xml'.split():
-            baseline = '{datadir}/{name}.{ext}'.format(
-                datadir=datadir, name=name, ext=ext)
+        for ext in "txt xml csv json html".split():
+            if ext == "html" and is_compiler(os.getenv("CC"), "gcc-5", "gcc-6"):
+                continue
+            baseline = "{datadir}/{name}.{ext}".format(
+                datadir=datadir,
+                name=name,
+                ext=ext,
+            )
             if not os.path.exists(baseline):
                 continue
             else:
                 yield Example(name, script, baseline)
 
 
-@pytest.mark.skipif(not os.getenv('CC').startswith('gcc'), reason="Only for gcc")
-@pytest.mark.parametrize('example', find_test_cases(), ids=str)
+@pytest.mark.skipif(
+    not os.path.split(os.getenv("CC"))[1].startswith("gcc") or IS_MACOS,
+    reason="Only for gcc",
+)
+@pytest.mark.parametrize("example", find_test_cases(), ids=str)
 def test_example(example):
     cmd = example.script
     baseline_file = example.baseline
@@ -71,3 +86,7 @@ def test_example(example):
     else:
         assert output == baseline
     os.chdir(startdir)
+
+
+def test_timestamps_example():
+    subprocess.check_call(["sh", "example_timestamps.sh"], cwd=datadir)

@@ -1,13 +1,11 @@
 
 BASE_OS:=$(shell uname | cut -d'-' -f1)
-ifneq (,$(findstring MINGW,$(BASE_OS)))
-  BASE_OS:=MSYS_NT
-endif
 
-ifeq ($(BASE_OS),MSYS_NT)
-  FAIL_UNDER_LINE := 76.9
+ifeq ($(filter $(BASE_OS),MSYS_NT MINGW64_NT),)
+  CC_REFERENCE ?= $(notdir $(CC))
+  FAIL_UNDER_LINE := $(shell cat reference/$(CC_REFERENCE)/fail_under)
 else
-  FAIL_UNDER_LINE := $(shell cat reference/$(CC)/fail_under)
+  FAIL_UNDER_LINE := 76.9
 endif
 
 all:
@@ -55,7 +53,7 @@ json_summary:
 json:
 	./testcase
 	$(GCOVR) --json coverage.json
-	
+
 coveralls:
 	./testcase
 	$(GCOVR) -d --coveralls coveralls.json

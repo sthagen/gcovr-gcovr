@@ -1,5 +1,18 @@
-Gcovr Cookbook
-==============
+.. _cookbook:
+
+Cookbook
+========
+
+This section contains how-to guides
+on creating code coverage reports for various purposes.
+For an introduction on using gcovr,
+see the :ref:`guide` instead.
+
+Recipes in the cookbook:
+
+.. contents::
+   :local:
+   :depth: 1
 
 .. _c extensions in python:
 
@@ -49,7 +62,7 @@ A shell session might look like this:
 
     # run gcovr
     rm -rf coverage; mkdir coverage
-    gcovr --filter src/ --print-summary --html-details -o coverage/index.html
+    gcovr --filter src/ --print-summary --html-details coverage/index.html
 
 .. _oos cmake:
 
@@ -68,7 +81,7 @@ commands need to be in ``CMakeLists.txt``:
     :end-before: #END cmakecmds
 
 The ``--coverage`` compiler flag is an alternative to
-``fprofile-arcs -ftest-coverage`` for
+``-fprofile-arcs -ftest-coverage`` for
 `recent version of gcc <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html>`__.
 In versions 3.13 and later of ``cmake``, the
 ``target_link_libraries`` command can be removed and
@@ -89,7 +102,7 @@ and run the program:
     :start-after: #BEGIN cmake_run
     :end-before: #END cmake_run
 
-However, invocation of ``gcovr`` itself has to change. The assorted 
+However, invocation of ``gcovr`` itself has to change. The assorted
 ``.gcno`` and ``.gcda`` files will appear under the ``CMakeFiles``
 directory in ``BLD_DIR``, rather than next to the sources. Since
 ``gcovr`` requires both, the command we need to run is:

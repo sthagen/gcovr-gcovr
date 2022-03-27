@@ -16,7 +16,13 @@ span.uncoveredLine
     background-color: var(--uncovered_color) !important;
 }
 
-.linebranch, .linecount
+td.excludedLine,
+span.excludedLine
+{
+    background-color: var(--excluded_color) !important;
+}
+
+.linebranch, .linedecision, .linecount
 {
     font-family: monospace;
     border-right: 1px gray solid;
@@ -24,15 +30,15 @@ span.uncoveredLine
     text-align: right;
 }
 
-.linebranchDetails
+.linebranchDetails, .linedecisionDetails
 {
     position: relative;
 }
-.linebranchSummary
+.linebranchSummary, .linedecisionSummary
 {
     cursor: help;
 }
-.linebranchContents
+.linebranchContents, .linedecisionContents
 {
     font-family: sans-serif;
     font-size: small;
@@ -56,6 +62,21 @@ span.uncoveredLine
     color: var(--notTakenBranch_color) !important;
 }
 
+.takenDecision
+{
+    color: {{takenDecision_color}}!important;
+}
+
+.notTakenDecision
+{
+    color: {{notTakenDecision_color}}!important;
+}
+
+.uncheckedDecision
+{
+    color: {{uncheckedDecision_color}}!important;
+}
+
 .src
 {
     padding-left: 12px;
@@ -69,7 +90,10 @@ span.uncoveredLine
 }
 
 span.takenBranch,
-span.notTakenBranch
+span.notTakenBranch,
+span.takenDecision,
+span.notTakenDecision,
+span.uncheckedDecision
 {
     font-family: monospace;
     font-weight: bold;
@@ -80,6 +104,31 @@ pre
     height : 15px;
     margin-top: 0;
     margin-bottom: 0;
+}
+
+.listOfFunctions td, .listOfFunctions th {
+    padding: 0 10px;
+}
+.listOfFunctions th
+{
+    text-align: center;
+    color: white;
+    background-color: SteelBlue;
+}
+.listOfFunctions tr > td {
+    background: aliceblue;
+}
+.listOfFunctions tr:nth-child(even) > td {
+    background: LightSteelBlue
+}
+.listOfFunctions tr:hover > td
+{
+    background-color: #ddd;
+}
+.listOfFunctions tr > td > a
+{
+    text-decoration: none;
+    color: inherit;
 }
 
 .source-line
