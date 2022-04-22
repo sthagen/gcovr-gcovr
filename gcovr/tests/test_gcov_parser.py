@@ -9,9 +9,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -274,17 +275,17 @@ GCOV_8_SOURCES = dict(
 )
 
 GCOV_8_EXPECTED_UNCOVERED_LINES = dict(
-    gcov_8_example="33",
-    gcov_8_exclude_throw="33",
-    nautilus_example="51-52,54",
-    gcov_8_example_2="33",
+    gcov_8_example=[33],
+    gcov_8_exclude_throw=[33],
+    nautilus_example=[51, 52, 54],
+    gcov_8_example_2=[33],
 )
 
 GCOV_8_EXPECTED_UNCOVERED_BRANCHES = dict(
-    gcov_8_example="21,23,24,30,32,33,35",
-    gcov_8_exclude_throw="30,32,33",
-    nautilus_example="51",
-    gcov_8_example_2="21,23,24,30,32,33,35",
+    gcov_8_example=[21, 23, 24, 30, 32, 33, 35],
+    gcov_8_exclude_throw=[30, 32, 33],
+    nautilus_example=[51],
+    gcov_8_example_2=[21, 23, 24, 30, 32, 33, 35],
 )
 
 GCOV_8_EXCLUDE_THROW_BRANCHES = dict(
@@ -319,8 +320,12 @@ def test_gcov_8(capsys, sourcename):
         flags=flags,
     )
 
-    uncovered_lines = coverage.uncovered_lines_str()
-    uncovered_branches = coverage.uncovered_branches_str()
+    uncovered_lines = [
+        line.lineno for line in coverage.lines.values() if line.is_uncovered
+    ]
+    uncovered_branches = [
+        line.lineno for line in coverage.lines.values() if line.has_uncovered_branch
+    ]
     assert uncovered_lines == expected_uncovered_lines
     assert uncovered_branches == expected_uncovered_branches
 
@@ -354,10 +359,14 @@ def test_unknown_tags(caplog, ignore_errors):
     if ignore_errors:
         coverage = run_the_parser()
 
-        uncovered_lines = coverage.uncovered_lines_str()
-        uncovered_branches = coverage.uncovered_branches_str()
-        assert uncovered_lines == ""
-        assert uncovered_branches == ""
+        uncovered_lines = [
+            line.lineno for line in coverage.lines.values() if line.is_uncovered
+        ]
+        uncovered_branches = [
+            line.lineno for line in coverage.lines.values() if line.has_uncovered_branch
+        ]
+        assert uncovered_lines == []
+        assert uncovered_branches == []
     else:
         with pytest.raises(Exception):
             coverage = run_the_parser()

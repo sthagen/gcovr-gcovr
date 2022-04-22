@@ -1,8 +1,7 @@
 ﻿Gcovr is maintained by:
 
-    William Hart,
-    John Siirola,
-    and Lukas Atkinson.
+    Lukas Atkinson
+    and Michael Förderer.
 
 The following developers contributed to gcovr (ordered alphabetically):
 
@@ -17,6 +16,7 @@ The following developers contributed to gcovr (ordered alphabetically):
     Cezary Gapiński,
     Christian Taedcke,
     Dave George,
+    Davide Pesavento,
     Dom Postorivo,
     ebmmy,
     Elektrobit Automotive GmbH,

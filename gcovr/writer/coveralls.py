@@ -9,9 +9,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -25,9 +26,10 @@ import os
 import re
 import shutil
 import subprocess
-
 from hashlib import md5
+
 from ..utils import presentable_filename, open_text_for_writing
+from ..coverage import CovData
 
 PRETTY_JSON_INDENT = 4
 
@@ -50,7 +52,7 @@ def _write_coveralls_result(gcovr_json_dict, output_file, pretty):
         write_json(gcovr_json_dict, fh)
 
 
-def print_coveralls_report(covdata, output_file, options):
+def print_coveralls_report(covdata: CovData, output_file, options):
     """
     Outputs a JSON report in the Coveralls API coverage format
 

@@ -9,9 +9,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -19,9 +20,10 @@
 from lxml import etree
 
 from ..utils import open_binary_for_writing, presentable_filename
+from ..coverage import CovData
 
 
-def print_sonarqube_report(covdata, output_file, options):
+def print_sonarqube_report(covdata: CovData, output_file, options):
     """produce an XML report in the Sonarqube generic coverage format"""
 
     root = etree.Element("coverage")
@@ -33,17 +35,6 @@ def print_sonarqube_report(covdata, output_file, options):
 
         fileNode = etree.Element("file")
         fileNode.set("path", filename)
-
-        for function_name in sorted(data.functions):
-            function_cov = data.functions[function_name]
-            L = etree.Element("functionToCover")
-            L.set("functionName", str(function_name))
-            L.set("lineNumber", str(function_cov.lineno))
-            if function_cov.count > 0:
-                L.set("covered", "true")
-            else:
-                L.set("covered", "false")
-            fileNode.append(L)
 
         for lineno in sorted(data.lines):
             line_cov = data.lines[lineno]
@@ -59,9 +50,9 @@ def print_sonarqube_report(covdata, output_file, options):
 
             branches = line_cov.branches
             if branches:
-                b_total, b_hits, coverage = line_cov.branch_coverage()
-                L.set("branchesToCover", str(b_total))
-                L.set("coveredBranches", str(b_hits))
+                b = line_cov.branch_coverage()
+                L.set("branchesToCover", str(b.total))
+                L.set("coveredBranches", str(b.covered))
 
             fileNode.append(L)
 

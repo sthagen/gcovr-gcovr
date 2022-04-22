@@ -9,9 +9,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -51,8 +52,15 @@ from typing import (
     NoReturn,
 )
 
-from .coverage import FileCoverage
+from .coverage import BranchCoverage, FileCoverage, FunctionCoverage
 from .decision_analysis import DecisionParser
+from .merging import (
+    MergeOptions,
+    get_or_create_line_coverage,
+    insert_branch_coverage,
+    insert_function_coverage,
+)
+
 
 logger = logging.getLogger("gcovr")
 
@@ -121,7 +129,7 @@ class _MetadataLine(NamedTuple):
     """A gcov line with metadata: ``-: 0:KEY:VALUE``"""
 
     key: str
-    value: str
+    value: Optional[str]
 
 
 class _BlockLine(NamedTuple):
@@ -214,7 +222,19 @@ def parse_metadata(lines: List[str]) -> Dict[str, str]:
     ...   -: 0:Foo:bar
     ...   -: 0:Key:123
     ... '''.splitlines())
-    {'Foo': 'bar', 'Key': '123'}
+    Traceback (most recent call last):
+       ...
+    RuntimeError: Missing key 'Source' in metadata. GCOV data was >>
+      -: 0:Foo:bar
+      -: 0:Key:123<< End of GCOV data
+    >>> parse_metadata('-: 0:Source: file \n -: 0:Foo: bar \n -: 0:Key: 123 '.splitlines())
+    {'Source': 'file', 'Foo': 'bar', 'Key': '123'}
+    >>> parse_metadata('''
+    ...   -: 0:Source:file
+    ...   -: 0:Foo:bar
+    ...   -: 0:Key
+    ... '''.splitlines())
+    {'Source': 'file', 'Foo': 'bar', 'Key': None}
     """
     collected = {}
     for line in lines:
@@ -230,6 +250,12 @@ def parse_metadata(lines: List[str]) -> Dict[str, str]:
             collected[key] = value
         else:
             break  # stop at the first line that is not metadata
+
+    if "Source" not in collected:
+        data = "\n".join(lines)
+        raise RuntimeError(
+            f"Missing key 'Source' in metadata. GCOV data was >>{data}<< End of GCOV data"
+        )
 
     return collected
 
@@ -364,7 +390,7 @@ def parse_coverage(
         _add_coverage_for_function(coverage, state.lineno + 1, function, context)
 
     if flags & ParserFlags.PARSE_DECISIONS:
-        decision_parser = DecisionParser(filename, coverage, src_lines)
+        decision_parser = DecisionParser(coverage, src_lines)
         decision_parser.parse_all_lines()
 
     _report_lines_with_errors(lines_with_errors, context)
@@ -410,10 +436,12 @@ def _gather_coverage_from_line(
             is_function=bool(state.deferred_functions),
         )
 
+        # FIXME this can't yet use the merge() functions
+        # due to inconsistency in handling of the noncode flag
         if noncode:
-            coverage.line(lineno).noncode = True
-        elif count is not None:
-            coverage.line(lineno).count += count
+            get_or_create_line_coverage(coverage, lineno).noncode = True
+        if count is not None:
+            get_or_create_line_coverage(coverage, lineno).count += count
 
         # handle deferred functions
         for function in state.deferred_functions:
@@ -443,12 +471,16 @@ def _gather_coverage_from_line(
             )
             return state
 
-        branch_cov = coverage.line(state.lineno).branch(branchno)
-        branch_cov.count += count
-        if annotation == "fallthrough":
-            branch_cov.fallthrough = True
-        if annotation == "throw":
-            branch_cov.throw = True
+        line_cov = coverage.lines[state.lineno]  # must already exist
+        insert_branch_coverage(
+            line_cov,
+            branchno,
+            BranchCoverage(
+                count=count,
+                fallthrough=(annotation == "fallthrough"),
+                throw=(annotation == "throw"),
+            ),
+        )
 
         return state
 
@@ -594,9 +626,11 @@ def _add_coverage_for_function(
         )
         return
 
-    function_cov = coverage.function(name)
-    function_cov.lineno = lineno
-    function_cov.count += calls
+    insert_function_coverage(
+        coverage,
+        FunctionCoverage(name, lineno=lineno, call_count=calls),
+        MergeOptions(ignore_function_lineno=True),
+    )
 
 
 def _parse_line(line: str) -> _Line:
@@ -721,8 +755,12 @@ def _parse_line(line: str) -> _Line:
 
         # METADATA (key, value)
         if count_str == "-" and lineno == "0":
-            key, value = source_code.split(":", 1)
-            return _MetadataLine(key, value)
+            if ":" in source_code:
+                key, value = source_code.split(":", 1)
+                return _MetadataLine(key, value.strip())
+            else:
+                # Add a syntethic metadata with no value
+                return _MetadataLine(source_code, None)
 
         if count_str == "-":
             count = 0

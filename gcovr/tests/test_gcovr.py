@@ -9,9 +9,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -74,13 +75,14 @@ CC_REFERENCE = env.get("CC_REFERENCE", CC)
 
 REFERENCE_DIRS = []
 REFERENCE_DIR_VERSION_LIST = (
-    ["gcc-5", "gcc-6", "gcc-8", "gcc-9"]
+    ["gcc-5", "gcc-6", "gcc-8", "gcc-9", "gcc-10", "gcc-11"]
     if "gcc" in CC_REFERENCE
     else ["clang-10", "clang-13"]
 )
 for ref in REFERENCE_DIR_VERSION_LIST:
     REFERENCE_DIRS.append(os.path.join("reference", ref))
-    REFERENCE_DIRS.append(f"{REFERENCE_DIRS[-1]}-{platform.system()}")
+    if platform.system() != "Linux":
+        REFERENCE_DIRS.append(f"{REFERENCE_DIRS[-1]}-{platform.system()}")
     if ref in CC_REFERENCE:
         break
 REFERENCE_DIRS.reverse()
@@ -92,11 +94,14 @@ RE_TXT_WHITESPACE = re.compile(r"[ ]+$", flags=re.MULTILINE)
 RE_XML_ATTRS = re.compile(r'(timestamp)="[^"]*"')
 RE_XML_GCOVR_VERSION = re.compile(r'version="gcovr [^"]+"')
 
-RE_COVERALLSE_CLEAN_KEYS = re.compile(
+RE_COVERALLS_CLEAN_KEYS = re.compile(
     r'"(commit_sha|repo_token|run_at|version)": "[^"]*"'
 )
-RE_COVERALLSE_GIT = re.compile(
+RE_COVERALLS_GIT = re.compile(
     r'"git": \{(?:"[^"]*": (?:"[^"]*"|\{[^\}]*\}|\[[^\]]*\])(?:, )?)+\}, '
+)
+RE_COVERALLS_GIT_PRETTY = re.compile(
+    r'\s+"git": \{\s+"branch": "branch",\s+"head": \{(?:\s+"[^"]+":.+\n)+\s+\},\s+"remotes": \[[^\]]+\]\s+\},'
 )
 
 RE_HTML_ATTRS = re.compile('((timestamp)|(version))="[^"]*"')
@@ -138,8 +143,9 @@ def scrub_html(contents):
 
 def scrub_coveralls(contents):
     contents += "\n"
-    contents = RE_COVERALLSE_CLEAN_KEYS.sub('"\\1": ""', contents)
-    contents = RE_COVERALLSE_GIT.sub("", contents)
+    contents = RE_COVERALLS_CLEAN_KEYS.sub('"\\1": ""', contents)
+    contents = RE_COVERALLS_GIT_PRETTY.sub("", contents)
+    contents = RE_COVERALLS_GIT.sub("", contents)
     return contents
 
 

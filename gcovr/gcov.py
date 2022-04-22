@@ -9,9 +9,11 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
+
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -23,11 +25,13 @@ import shlex
 import subprocess
 import io
 from threading import Lock
+from typing import Optional
 
 from .utils import search_file, commonpath
 from .workers import locked_directory
-from .coverage import FileCoverage
 from .gcov_parser import parse_metadata, parse_coverage, ParserFlags
+from .coverage import CovData
+from .merging import insert_file_coverage
 
 logger = logging.getLogger("gcovr")
 
@@ -89,7 +93,13 @@ def find_datafiles(search_path, exclude_dirs):
 #
 # Process a single gcov datafile
 #
-def process_gcov_data(data_fname, covdata, source_fname, options, currdir=None):
+def process_gcov_data(
+    data_fname: str,
+    covdata: CovData,
+    gcda_fname: Optional[str],
+    options,
+    currdir=None,
+) -> None:
     with io.open(
         data_fname, "r", encoding=options.source_encoding, errors="replace"
     ) as INPUT:
@@ -98,10 +108,13 @@ def process_gcov_data(data_fname, covdata, source_fname, options, currdir=None):
     # Find the source file
     # TODO: instead of heuristics, use "working directory" if available
     metadata = parse_metadata(lines)
+    source = metadata.get("Source")
+    if source is None:
+        raise RuntimeError("Unexpected value 'None' for metadata 'Source'.")
     fname = guess_source_file_name(
-        metadata["Source"].strip(),
+        source,
         data_fname,
-        source_fname,
+        gcda_fname,
         root_dir=options.root_dir,
         starting_dir=options.starting_dir,
         obj_dir=None if options.objdir is None else os.path.abspath(options.objdir),
@@ -149,13 +162,13 @@ def process_gcov_data(data_fname, covdata, source_fname, options, currdir=None):
         exclude_pattern_prefix=options.exclude_pattern_prefix,
         flags=parser_flags,
     )
-    covdata.setdefault(key, FileCoverage(key)).update(coverage)
+    insert_file_coverage(covdata, coverage)
 
 
 def guess_source_file_name(
     gcovname,
     data_fname,
-    source_fname,
+    gcda_fname,
     root_dir,
     starting_dir,
     obj_dir,
@@ -163,22 +176,22 @@ def guess_source_file_name(
 ):
     if currdir is None:
         currdir = os.getcwd()
-    if source_fname is None:
+    if gcda_fname is None:
         fname = guess_source_file_name_via_aliases(gcovname, currdir, data_fname)
     else:
         fname = guess_source_file_name_heuristics(
-            gcovname, currdir, root_dir, starting_dir, obj_dir, source_fname
+            gcovname, data_fname, currdir, root_dir, starting_dir, obj_dir, gcda_fname
         )
 
     logger.debug(
         f"Finding source file corresponding to a gcov data file\n"
-        f"  currdir      {currdir}\n"
         f"  gcov_fname   {data_fname}\n"
-        f"  source_fname {source_fname}\n"
+        f"  currdir      {currdir}\n"
         f"  root         {root_dir}\n"
-        # f"  common_dir   {common_dir}\n"
-        # f"  subdir       {subdir}\n"
-        f"  fname        {fname}"
+        f"  starting_dir {starting_dir}\n"
+        f"  obj_dir      {obj_dir}\n"
+        f"  gcda_fname   {gcda_fname}\n"
+        f"  --> fname    {fname}"
     )
 
     return fname
@@ -203,44 +216,51 @@ def guess_source_file_name_via_aliases(gcovname, currdir, data_fname):
 
 
 def guess_source_file_name_heuristics(
-    gcovname, currdir, root_dir, starting_dir, obj_dir, source_fname
+    gcovname, data_fname, currdir, root_dir, starting_dir, obj_dir, gcda_fname
 ):
 
     # gcov writes filenames with '/' path seperators even if the OS
     # separator is different, so we replace it with the correct separator
     gcovname = gcovname.replace("/", os.sep)
 
-    # 0. Try using the current working directory as the source directory
+    # 0. Try using the path to the gcov file
+    fname = os.path.join(os.path.dirname(data_fname), gcovname)
+    if os.path.exists(fname):
+        return fname
+
+    logger.debug("Fallback to heuristic of gcovr 5.1")
+
+    # 1. Try using the current working directory as the source directory
     fname = os.path.join(currdir, gcovname)
     if os.path.exists(fname):
         return fname
 
-    # 1. Try using the path to common prefix with the root_dir as the source directory
+    # 2. Try using the path to common prefix with the root_dir as the source directory
     fname = os.path.join(root_dir, gcovname)
     if os.path.exists(fname):
         return fname
 
-    # 2. Try using the starting directory as the source directory
+    # 3. Try using the starting directory as the source directory
     fname = os.path.join(starting_dir, gcovname)
     if os.path.exists(fname):
         return fname
 
-    # 3. Try using relative path from object dir
+    # 4. Try using relative path from object dir
     if obj_dir is not None:
         fname = os.path.normpath(os.path.join(obj_dir, gcovname))
         if os.path.exists(fname):
             return fname
 
     # Get path of gcda file
-    source_fname_dir = os.path.dirname(source_fname)
+    gcda_fname_dir = os.path.dirname(gcda_fname)
 
-    # 4. Try using the path to the gcda as the source directory
-    fname = os.path.join(source_fname_dir, gcovname)
+    # 5. Try using the path to the gcda as the source directory
+    fname = os.path.join(gcda_fname_dir, gcovname)
     if os.path.exists(fname):
         return os.path.normpath(fname)
 
-    # 5. Try using the path to the gcda file as the source directory, removing the path part from the gcov file
-    fname = os.path.join(source_fname_dir, os.path.basename(gcovname))
+    # 6. Try using the path to the gcda file as the source directory, removing the path part from the gcov file
+    fname = os.path.join(gcda_fname_dir, os.path.basename(gcovname))
     return fname
 
 
@@ -453,42 +473,55 @@ class gcov:
 
 
 def run_gcov_and_process_files(abs_filename, covdata, options, error, toerase, chdir):
-    gcov_cmd = gcov(options.gcov_cmd)
+    fname = None
+    out = None
+    err = None
+    try:
+        gcov_cmd = gcov(options.gcov_cmd)
 
-    # ATTENTION:
-    # This lock is essential for parallel processing because without
-    # this there can be name collisions for the generated output files.
-    with locked_directory(chdir):
-        out, err = gcov_cmd.run_with_args(
-            [
-                abs_filename,
-                *gcov_cmd.get_default_options(),
-                "--object-directory",
-                os.path.dirname(abs_filename),
-            ],
-            cwd=chdir,
-        ).communicate()
+        # ATTENTION:
+        # This lock is essential for parallel processing because without
+        # this there can be name collisions for the generated output files.
+        with locked_directory(chdir):
+            out, err = gcov_cmd.run_with_args(
+                [
+                    abs_filename,
+                    *gcov_cmd.get_default_options(),
+                    "--object-directory",
+                    os.path.dirname(abs_filename),
+                ],
+                cwd=chdir,
+            ).communicate()
 
-        # find the files that gcov created
-        active_gcov_files, all_gcov_files = select_gcov_files_from_stdout(
-            out,
-            gcov_filter=options.gcov_filter,
-            gcov_exclude=options.gcov_exclude,
-            chdir=chdir,
+            # find the files that gcov created
+            active_gcov_files, all_gcov_files = select_gcov_files_from_stdout(
+                out,
+                gcov_filter=options.gcov_filter,
+                gcov_exclude=options.gcov_exclude,
+                chdir=chdir,
+            )
+
+            if unknown_cla_re.search(err):
+                # gcov tossed errors: throw exception
+                raise RuntimeError("Error in gcov command line: {}".format(err))
+            elif source_re.search(err):
+                # gcov tossed errors: try the next potential_wd
+                error(err)
+                done = False
+            else:
+                # Process *.gcov files
+                for fname in active_gcov_files:
+                    process_gcov_data(fname, covdata, abs_filename, options)
+                done = True
+    except Exception:
+        logger.error(
+            f"Trouble processing {abs_filename!r} with working directory {chdir!r}.\n"
+            f"Stdout of gcov was >>{out}<< End of stdout\n"
+            f"Stderr of gcov was >>{err}<< End of stderr\n"
+            f"Current processed gcov file was {fname!r}.\n"
+            "Use option --verbose to get extended informations."
         )
-
-    if unknown_cla_re.search(err):
-        # gcov tossed errors: throw exception
-        raise RuntimeError("Error in gcov command line: {}".format(err))
-    elif source_re.search(err):
-        # gcov tossed errors: try the next potential_wd
-        error(err)
-        done = False
-    else:
-        # Process *.gcov files
-        for fname in active_gcov_files:
-            process_gcov_data(fname, covdata, abs_filename, options)
-        done = True
+        raise
 
     if not options.keep:
         toerase.update(all_gcov_files)

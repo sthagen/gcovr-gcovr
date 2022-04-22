@@ -11,9 +11,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -23,6 +24,7 @@ import os
 import logging
 import re
 import subprocess
+import time
 from typing import List
 
 import gcovr.version
@@ -36,10 +38,10 @@ VERSION = gcovr.version.__version__
 COPYRIGHT = [
     f"Copyright (c) 2013-{YEAR} the gcovr authors",
     "Copyright (c) 2013 Sandia Corporation.",
-    "This software is distributed under the BSD License.",
     "Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,",
     "the U.S. Government retains certain rights in this software.",
 ]
+LICENSE = "This software is distributed under the 3-clause BSD License."
 HEADER_END = (
     " ****************************************************************************"
 )
@@ -55,6 +57,8 @@ def getLicenseSection(comment_char: str = "#"):
     yield comment_char
     for line in COPYRIGHT:
         yield comment_char + " " + line
+    yield comment_char
+    yield comment_char + " " + LICENSE
     yield comment_char + " For more information, see the README.rst file."
     yield comment_char
     yield comment_char + HEADER_END
@@ -147,7 +151,98 @@ def updateCallOfReleaseChecklist(filename: str, lines: List[str]):
             callFound = True
         newLines.append(line)
     if not callFound:
-        raise RuntimeError(f"Call of {callReleaseChecklist!r} not found in {filename!r}.")
+        raise RuntimeError(
+            f"Call of {callReleaseChecklist!r} not found in {filename!r}."
+        )
+
+    return newLines
+
+
+def updateChangelog(filename: str, lines: List[str]):
+    newLines = []
+
+    # We need to also change the line after "Next Release"
+    # because the minus must have the same length than the
+    # headline to have valid RST.
+    # We change:
+    #    Next Release
+    #    ------------
+    # to:
+    #    x.y (Day Month Year)
+    #    --------------------
+    nextLine = None
+    for line in lines:
+        if line == "Next Release":
+            line = f"{VERSION} ({time.strftime('%d %B %Y')})"
+            nextLine = "-" * len(line)
+        elif nextLine:
+            line = nextLine
+            nextLine = None
+        newLines.append(line)
+
+    return newLines
+
+
+def updateReadme(filename: str, lines: List[str]):
+    newLines = []
+
+    iterLines = iter(lines)
+    for line in iterLines:
+        newLines.append(line)
+        if line == ".. begin license":
+            break
+    else:
+        raise RuntimeError(f"Start of license not found in {filename!r}.")
+
+    newLines.append("")
+    for line in COPYRIGHT:
+        newLines.append(line)
+    newLines.append("")
+    newLines.append(LICENSE)
+
+    for line in iterLines:
+        if line == "See LICENSE.txt for full details.":
+            newLines.append(line)
+            break
+    else:
+        raise RuntimeError(f"Reference to LICENSE.txr not found in {filename!r}.")
+
+    newLines.extend(iterLines)
+
+    return newLines
+
+
+def updatDocumentation(filename: str, lines: List[str]):
+    newLines = []
+
+    for line in lines:
+        if "NEXT" in line:
+            line = re.sub(
+                r"(\.\. (?:versionadded|versionchanged|deprecated):: )NEXT",
+                r"\g<1>" + VERSION,
+                line,
+            )
+        newLines.append(line)
+
+    return newLines
+
+
+def updateLicense(filename: str, lines: List[str]):
+    newLines = []
+
+    for line in COPYRIGHT:
+        newLines.append(line)
+    newLines.append("")
+
+    iterLines = iter(lines)
+    for line in iterLines:
+        if line == "All rights reserved.":
+            newLines.append(line)
+            break
+    else:
+        raise RuntimeError(f"Start of license not found in {filename!r}.")
+
+    newLines.extend(iterLines)
 
     return newLines
 
@@ -169,6 +264,14 @@ def main():
                 handlers.append(updateCopyrightString)
             if filename == "deploy.yml":
                 handlers.append(updateCallOfReleaseChecklist)
+            if filename == "CHANGELOG.rst":
+                handlers.append(updateChangelog)
+            if filename == "README.rst":
+                handlers.append(updateReadme)
+            if filename.endswith(".rst"):
+                handlers.append(updatDocumentation)
+            if filename == "LICENSE.txt":
+                handlers.append(updateLicense)
 
             if handlers:
                 with open(fullname) as f:

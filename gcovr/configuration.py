@@ -9,9 +9,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -522,17 +523,16 @@ def _assign_value_to_dict(
     option: GcovrConfigOption,
     is_single_value: bool,
 ) -> None:
-
-    if option.action in ("store", "store_const"):
-        namespace[option.name] = value
-        return
-
-    if option.action == "append":
+    if option.action == "append" or option.nargs == "*":
         append_target = namespace.setdefault(option.name, [])
         if is_single_value:
             append_target.append(value)
         else:
             append_target.extend(value)
+        return
+
+    if option.action in ("store", "store_const"):
+        namespace[option.name] = value
         return
 
     assert False, f"unexpected action for {option.name}: {option.action!r}"

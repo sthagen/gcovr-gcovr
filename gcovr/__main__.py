@@ -9,9 +9,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -25,6 +26,7 @@ import io
 from argparse import ArgumentParser
 from os.path import normpath
 from glob import glob
+from typing import Callable, List, Optional, Tuple
 
 from .configuration import (
     argument_parser_setup,
@@ -40,13 +42,14 @@ from .gcov import (
     process_datafile,
 )
 from .utils import (
-    get_global_stats,
     AlwaysMatchFilter,
     DirectoryPrefixFilter,
     configure_logging,
 )
 from .version import __version__
 from .workers import Workers
+from .coverage import CovData, SummarizedStats
+from .merging import merge_covdata
 
 # generators
 from .writer.json import gcovr_json_files_to_coverage
@@ -66,21 +69,15 @@ logger = logging.getLogger("gcovr")
 #
 # Exits with status 2 if below threshold
 #
-def fail_under(covdata, threshold_line, threshold_branch):
-    (
-        lines_total,
-        lines_covered,
-        percent_lines,
-        functions_total,
-        functions_covered,
-        percent_functions,
-        branches_total,
-        branches_covered,
-        percent_branches,
-    ) = get_global_stats(covdata)
+def fail_under(covdata: CovData, threshold_line, threshold_branch):
+    stats = SummarizedStats.from_covdata(covdata)
 
-    if branches_total == 0:
-        percent_branches = 100.0
+    # If there are no lines, mark as uncovered
+    # (indicates no data at all, likely an error).
+    percent_lines = stats.line.percent_or(0.0)
+
+    # Allow data with no branches.
+    percent_branches = stats.branch.percent_or(100.0)
 
     line_nok = False
     branch_nok = False
@@ -133,7 +130,6 @@ def create_argument_parser():
 COPYRIGHT = (
     "Copyright (c) 2013-2022 the gcovr authors\n"
     "Copyright (c) 2013 Sandia Corporation.\n"
-    "This software is distributed under the BSD License.\n"
     "Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,\n"
     "the U.S. Government retains certain rights in this software.\n"
 )
@@ -301,11 +297,11 @@ def main(args=None):
             )
             sys.exit(1)
 
-    covdata = dict()
+    covdata: CovData
     if options.add_tracefile:
-        collect_coverage_from_tracefiles(covdata, options)
+        covdata = collect_coverage_from_tracefiles(options)
     else:
-        collect_coverage_from_gcov(covdata, options)
+        covdata = collect_coverage_from_gcov(options)
 
     logger.debug(f"Gathered coveraged data for {len(covdata)} files")
 
@@ -319,7 +315,7 @@ def main(args=None):
         fail_under(covdata, options.fail_under_line, options.fail_under_branch)
 
 
-def collect_coverage_from_tracefiles(covdata, options):
+def collect_coverage_from_tracefiles(options) -> CovData:
     datafiles = set()
 
     for trace_files_regex in options.add_tracefile:
@@ -334,10 +330,10 @@ def collect_coverage_from_tracefiles(covdata, options):
                 datafiles.add(normpath(trace_file))
 
     options.root_dir = os.path.abspath(options.root)
-    gcovr_json_files_to_coverage(datafiles, covdata, options)
+    return gcovr_json_files_to_coverage(datafiles, options)
 
 
-def collect_coverage_from_gcov(covdata, options):
+def collect_coverage_from_gcov(options) -> CovData:
     datafiles = set()
 
     find_files = find_datafiles
@@ -367,20 +363,25 @@ def collect_coverage_from_gcov(covdata, options):
         contexts = pool.wait()
 
     toerase = set()
+    covdata = dict()
     for context in contexts:
-        for fname, cov in context["covdata"].items():
-            if fname not in covdata:
-                covdata[fname] = cov
-            else:
-                covdata[fname].update(cov)
+        covdata = merge_covdata(covdata, context["covdata"])
         toerase.update(context["toerase"])
+
     for filepath in toerase:
         if os.path.exists(filepath):
             os.remove(filepath)
 
+    return covdata
 
-def print_reports(covdata, options):
-    generators = []
+
+def print_reports(covdata: CovData, options):
+    Generator = Tuple[
+        List[Optional[OutputOrDefault]],
+        Callable[[CovData, str, Options], None],
+        Callable[[], None],
+    ]
+    generators: List[Generator] = []
 
     if options.txt:
         generators.append(

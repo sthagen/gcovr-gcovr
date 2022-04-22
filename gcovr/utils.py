@@ -9,21 +9,24 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
 
 from __future__ import annotations
 from argparse import ArgumentTypeError
-from typing import Type
+from typing import List, Type
 import logging
 import os
 import re
 import sys
 from contextlib import contextmanager
+
+from .coverage import CovData, CoverageStat
 
 logger = logging.getLogger("gcovr")
 
@@ -149,80 +152,6 @@ def commonpath(files):
     return prefix_path
 
 
-#
-# Get global statistics
-#
-def get_global_stats(covdata):
-    lines_total = 0
-    lines_covered = 0
-    functions_total = 0
-    functions_covered = 0
-    branches_total = 0
-    branches_covered = 0
-
-    keys = list(covdata.keys())
-
-    for key in keys:
-        (total, covered, _) = covdata[key].line_coverage()
-        lines_total += total
-        lines_covered += covered
-
-        (total, covered, _) = covdata[key].function_coverage()
-        functions_total += total
-        functions_covered += covered
-
-        (total, covered, _) = covdata[key].branch_coverage()
-        branches_total += total
-        branches_covered += covered
-
-    percent = calculate_coverage(lines_covered, lines_total)
-    percent_functions = calculate_coverage(functions_covered, functions_total)
-    percent_branches = calculate_coverage(branches_covered, branches_total)
-
-    return (
-        lines_total,
-        lines_covered,
-        percent,
-        functions_total,
-        functions_covered,
-        percent_functions,
-        branches_total,
-        branches_covered,
-        percent_branches,
-    )
-
-
-def summarize_file_coverage(coverage, root_filter):
-    filename = presentable_filename(coverage.filename, root_filter=root_filter)
-
-    branch_total, branch_covered, branch_percent = coverage.branch_coverage()
-    line_total, line_covered, line_percent = coverage.line_coverage()
-    function_total, function_covered, function_percent = coverage.function_coverage()
-    return (
-        filename,
-        line_total,
-        line_covered,
-        line_percent,
-        branch_total,
-        branch_covered,
-        branch_percent,
-        function_total,
-        function_covered,
-        function_percent,
-    )
-
-
-def calculate_coverage(covered, total, nan_value=0.0):
-    coverage = nan_value
-    if total != 0:
-        coverage = round(100.0 * covered / total, 1)
-        # If we get 100.0% and not all branches are covered use 99.9%
-        if (coverage == 100.0) and (covered != total):
-            coverage = 99.9
-
-    return coverage
-
-
 class FilterOption:
     NonEmpty: Type[NonEmptyFilterOption]
 
@@ -265,7 +194,7 @@ FilterOption.NonEmpty = NonEmptyFilterOption
 
 
 class Filter(object):
-    def __init__(self, pattern):
+    def __init__(self, pattern: str):
         cwd = os.getcwd()
         # Guessing if file system is case insensitive.
         # The working directory is not the root and accessible in upper and lower case.
@@ -277,7 +206,7 @@ class Filter(object):
         flags = re.IGNORECASE if is_fs_case_insensitive else 0
         self.pattern = re.compile(pattern, flags)
 
-    def match(self, path):
+    def match(self, path: str):
         os_independent_path = get_os_independent_path(path)
         return self.pattern.match(os_independent_path)
 
@@ -288,17 +217,17 @@ class Filter(object):
 
 
 class AbsoluteFilter(Filter):
-    def match(self, path):
+    def match(self, path: str):
         path = realpath(path)
-        return super(AbsoluteFilter, self).match(path)
+        return super().match(path)
 
 
 class RelativeFilter(Filter):
-    def __init__(self, root, pattern):
-        super(RelativeFilter, self).__init__(pattern)
+    def __init__(self, root: str, pattern: str):
+        super().__init__(pattern)
         self.root = realpath(root)
 
-    def match(self, path):
+    def match(self, path: str):
         path = realpath(path)
 
         # On Windows, a relative path can never cross drive boundaries.
@@ -310,7 +239,7 @@ class RelativeFilter(Filter):
                 return None
 
         relpath = os.path.relpath(path, self.root)
-        return super(RelativeFilter, self).match(relpath)
+        return super().match(relpath)
 
     def __str__(self):
         return "RelativeFilter({} root={})".format(self.pattern.pattern, self.root)
@@ -318,7 +247,7 @@ class RelativeFilter(Filter):
 
 class AlwaysMatchFilter(Filter):
     def __init__(self):
-        super(AlwaysMatchFilter, self).__init__("")
+        super().__init__("")
 
     def match(self, path):
         return True
@@ -329,11 +258,11 @@ class DirectoryPrefixFilter(Filter):
         path = realpath(directory)
         os_independent_path = get_os_independent_path(path)
         pattern = re.escape(f"{os_independent_path}/")
-        super(DirectoryPrefixFilter, self).__init__(pattern)
+        super().__init__(pattern)
 
-    def match(self, path):
+    def match(self, path: str):
         realpath = os.path.normpath(path)
-        return super(DirectoryPrefixFilter, self).match(realpath)
+        return super().match(realpath)
 
 
 def configure_logging() -> None:
@@ -352,8 +281,11 @@ def configure_logging() -> None:
 
 
 def sort_coverage(
-    covdata, show_branch, by_num_uncovered=False, by_percent_uncovered=False
-):
+    covdata: CovData,
+    show_branch: bool,
+    by_num_uncovered: bool = False,
+    by_percent_uncovered: bool = False,
+) -> List[str]:
     """Sort a coverage dict.
 
     covdata (dict): the coverage dictionary
@@ -364,19 +296,22 @@ def sort_coverage(
     returns: the sorted keys
     """
 
-    def num_uncovered_key(key):
+    def coverage_stat(key: str) -> CoverageStat:
         cov = covdata[key]
-        (total, covered, _) = (
-            cov.branch_coverage() if show_branch else cov.line_coverage()
-        )
-        uncovered = total - covered
+        if show_branch:
+            return cov.branch_coverage()
+        return cov.line_coverage()
+
+    def num_uncovered_key(key: str) -> int:
+        stat = coverage_stat(key)
+        uncovered = stat.total - stat.covered
         return uncovered
 
-    def percent_uncovered_key(key):
-        cov = covdata[key]
-        (total, covered, _) = (
-            cov.branch_coverage() if show_branch else cov.line_coverage()
-        )
+    def percent_uncovered_key(key: str) -> float:
+        stat = coverage_stat(key)
+        covered = stat.covered
+        total = stat.total
+
         if covered:
             return -1.0 * covered / total
         elif total:
@@ -441,8 +376,7 @@ def open_binary_for_writing(filename=None, default_filename=None, **kwargs):
             fh.close()
 
 
-def presentable_filename(filename, root_filter):
-    # type: (str, re.Regex) -> str
+def presentable_filename(filename: str, root_filter: re.Pattern) -> str:
     """mangle a filename so that it is suitable for a report"""
 
     normalized = root_filter.sub("", filename)

@@ -3,6 +3,42 @@
 .. program is needed to resolve option links
 .. program::  gcovr
 
+Next Release
+------------
+
+Known bugs:
+
+- Decision coverage analysis can resurrect excluded coverage. (:issue:`600`)
+
+Breaking changes:
+
+New features and notable changes:
+
+- Log additional infop on gcov parsing errors. (:issue:`589`)
+
+Bug fixes and small improvements:
+
+- Remove function coverage from sonarcube report. (:issue:`591`)
+- Fix parallel processing of gcov data. (:issue:`592`)
+- Better diagnostics when dealing with corrupted input files. (:issue:`593`)
+- Accept metadata lines without values (introduced in gcc-11). (:issue:`601`)
+- Properly close <a> element in detailed HTML report. (:issue:`602`)
+- Use `≥` sign instead of `>=` in HTML legend. (:issue:`603`)
+- Using :option:`--add-tracefile` will now correctly merge branch coverage. (:issue:`600`)
+- Fix package-level function coverage statistics in Cobertura XML reports. (:issue:`605`)
+- Respect excluded/noncode lines for aggregated branchcoverage. (:issue:`611`)
+- Fix list options in configuration file (search-path). (:issue:`612`)
+
+Documentation:
+
+Internal changes:
+
+- Fix black check to fail on format errors. (:issue:`594`)
+- Change session black with no arguments to format all files. (:issue:`595`)
+- Add gcc-10 and gcc-11 to the test suite. (:issue:`597`)
+- Improved internal coverage data model to simplify processing. (:issue:`600`)
+- Use pretty print for cobertura and coveralls in test suite. (:issue:`606`)
+
 5.1 (26 March 2022)
 -------------------
 

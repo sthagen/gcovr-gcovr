@@ -9,9 +9,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -395,7 +396,9 @@ def test_html_tab_size_zero(caplog):
 
 
 def test_multiple_output_formats_to_stdout(caplog):
-    c = log_capture(caplog, ["--xml", "--html", "--sonarqube", "--coveralls"])
+    c = log_capture(
+        caplog, ["--xml", "--html", "--sonarqube", "--coveralls", "--root", "gcovr"]
+    )
     message = c.record_tuples[0]
     assert message[1] == logging.WARNING
     assert (
@@ -419,7 +422,8 @@ def test_multiple_output_formats_to_stdout(caplog):
 
 def test_multiple_output_formats_to_stdout_1(caplog):
     c = log_capture(
-        caplog, ["--xml", "--html", "--sonarqube", "--coveralls", "-o", "-"]
+        caplog,
+        ["--xml", "--html", "--sonarqube", "--coveralls", "-o", "-", "--root", "gcovr"],
     )
     message = c.record_tuples[0]
     assert message[1] == logging.WARNING

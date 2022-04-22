@@ -9,9 +9,10 @@
 #
 # Copyright (c) 2013-2022 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
-# This software is distributed under the BSD License.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
+#
+# This software is distributed under the 3-clause BSD License.
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
@@ -24,12 +25,21 @@ import shlex
 import sys
 import nox
 
-GCC_VERSIONS = ["gcc-5", "gcc-6", "gcc-8", "gcc-9", "clang-10", "clang-13"]
+GCC_VERSIONS = [
+    "gcc-5",
+    "gcc-6",
+    "gcc-8",
+    "gcc-9",
+    "gcc-10",
+    "gcc-11",
+    "clang-10",
+    "clang-13",
+]
 GCC_VERSION2USE = os.path.split(os.environ.get("CC", "gcc-5"))[1]
 DEFAULT_TEST_DIRECTORIES = ["doc", "gcovr"]
 DEFAULT_LINT_ARGUMENTS = ["setup.py", "noxfile.py", "admin"] + DEFAULT_TEST_DIRECTORIES
 
-BLACK_PINNED_VERSION = "black==22.1.0"
+BLACK_PINNED_VERSION = "black==22.3.0"
 
 nox.options.sessions = ["qa"]
 
@@ -83,7 +93,7 @@ def lint(session: nox.Session) -> None:
     session.run("flake8", *args)
 
     if platform.python_implementation() == "CPython":
-        session.run("python", "-m", "black", "--diff", *args)
+        session.run("python", "-m", "black", "--diff", "--check", *args)
     else:
         session.log(
             f"Skip black because of platform {platform.python_implementation()}."
@@ -97,7 +107,7 @@ def black(session: nox.Session) -> None:
     if session.posargs:
         session.run("python", "-m", "black", *session.posargs)
     else:
-        session.run("python", "-m", "black", "--diff", *DEFAULT_LINT_ARGUMENTS)
+        session.run("python", "-m", "black", *DEFAULT_LINT_ARGUMENTS)
 
 
 @nox.session
@@ -214,14 +224,14 @@ def upload_wheel(session: nox.Session) -> None:
 def docker_container_os(session: nox.Session) -> str:
     if session.env["CC"] in ["gcc-5", "gcc-6"]:
         return "ubuntu:18.04"
-    elif session.env["CC"] == "clang-13":
-        return "ubuntu:22.04"
-    return "ubuntu:20.04"
+    elif session.env["CC"] in ["gcc-8", "gcc-9", "clang-10"]:
+        return "ubuntu:20.04"
+    return "ubuntu:22.04"
 
 
 def docker_container_id(session: nox.Session, version: str) -> str:
     """Get the docker container ID."""
-    return f"gcovr-qa-{docker_container_os(session)}-{version}-uid_{os.geteuid()}"
+    return f"gcovr-qa-{docker_container_os(session).replace(':', '_')}-{version}-uid_{os.geteuid()}"
 
 
 @nox.session(python=False)
