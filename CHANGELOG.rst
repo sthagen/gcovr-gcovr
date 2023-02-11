@@ -13,6 +13,8 @@ Breaking changes:
 - Remove not allowed attributes ``function-rate``, ``functions-covered`` and ``functions-valid``
   from cobertura report. (:issue:`671`)
 - Remove "noncode" entries in JSON reports. (:issue:`663`)
+- New :option:`--exclude-noncode-lines` to exclude noncode lines. Noncode lines are not excluded by default anymore. (:issue:`704`, :issue:`705`)
+- Changed :option:`--gcov-ignore-parse-errors` to accept list of errors to ignore. (:issue:`701`)
 
 New features and notable changes:
 
@@ -22,8 +24,9 @@ New features and notable changes:
 - New :option:`--calls` to report call coverage: function calls invoked/total (:issue:`666`)
 - New nox session to generate a portable application with pyinstaller, see :ref:`standalone application`. (:issue:`661`)
 - Print a warning if root directory contains symlinks. (:issue:`652`)
-- New :option:`--no-exclude-noncode-lines` to not exclude noncode lines. (:issue:`704`)
 - Change :option:`--keep` when calling gcov internaly. (:issue:`703`)
+- Allow annotations for never executed branches. (:issue:`711`)
+- Add function merge mode for same function defined in different lines. (:issue:`700`)
 
 Bug fixes and small improvements:
 
@@ -33,7 +36,8 @@ Bug fixes and small improvements:
 - Handle :option:`--version` before parsing the configuration file. (:issue:`696`)
 - Fix reports of excluded coverage. (:issue:`409`, :issue:`503`, :issue:`663`)
 - Fix handling for nonexistent source code for HTML-details and Coveralls reports (:issue:`663`)
-- :ref:`Exclusion marker regions <exclusion markers>` now contain the STOP marker line (:issue:`663`)
+- Exclude functions with :ref:`Exclusion markers` (:issue:`713`)
+
 
 Documentation:
 

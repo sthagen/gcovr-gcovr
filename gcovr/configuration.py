@@ -1272,11 +1272,31 @@ GCOVR_CONFIG_OPTIONS = [
         action="store_true",
     ),
     GcovrConfigOption(
+        "merge_mode_functions",
+        ["--merge-mode-functions"],
+        metavar="MERGE_MODE",
+        group="gcov_options",
+        choices=[
+            "strict",
+            "merge-use-line-0",
+            "merge-use-line-min",
+            "merge-use-line-max",
+            "separate",
+        ],
+        default="strict",
+        help=(
+            "The merge mode for functions coverage from different gcov files for same sourcefile."
+            "Default: {default!s}."
+        ),
+    ),
+    GcovrConfigOption(
         "exclude_noncode_lines",
-        ["--no-exclude-noncode-lines"],
+        ["--exclude-noncode-lines"],
+        config="exclude-noncode-lines",
         group="gcov_options",
         help="Exclude coverage from lines which seem to be non-code. Default: {default!s}.",
-        action="store_false",
+        action="store_true",
+        const_negate=False,
     ),
     GcovrConfigOption(
         "exclude_throw_branches",
@@ -1313,13 +1333,22 @@ GCOVR_CONFIG_OPTIONS = [
         "gcov_ignore_parse_errors",
         ["--gcov-ignore-parse-errors"],
         group="gcov_options",
+        choices=[
+            "all",
+            "negative_hits.warn",
+            "negative_hits.warn_once_per_file",
+        ],
+        nargs="?",
+        const="all",
+        default=None,
         help=(
             "Skip lines with parse errors in GCOV files "
             "instead of exiting with an error. "
             "A report will be shown on stderr. "
             "Default: {default!s}."
         ),
-        action="store_true",
+        type=str,
+        action="append",
     ),
     GcovrConfigOption(
         "objdir",
