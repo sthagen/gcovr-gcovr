@@ -14,6 +14,7 @@ Breaking changes:
 
 New features and notable changes:
 
+- Add `--html-template-dir` option to use custom Jinja2 templates (:issue:`758`)
 - Add block numbers and md5 sums of code lines to data model. (:issue:`764`)
 - If the CSS given with :option:`--html-css` contains the string ``/* Comment.Preproc */`` no ``pygments`` CSS is added anymore. (:issue:`786`)
 - Add support for ``Devcontainer`` and ``GitHub Codespaces``. (:issue:`771`)
@@ -21,6 +22,7 @@ New features and notable changes:
 - Pygments required >= 2.13.0. (:issue:`799`)
 - Add a second theme for HTML report inspired by GitHub. (:issue:`793`)
 - Add :option:`--fail-under-decision` and :option:`--fail-under-function` which will error under a given minimum coverage. (:issue:`773`)
+
 
 Bug fixes and small improvements:
 
@@ -38,6 +40,7 @@ Bug fixes and small improvements:
 Documentation:
 
 - Fix wrong command in ``How to create a standalone application`` docs (:issue:`792`)
+- Update output html to add github style themes (:issue:`818`)
 
 Internal changes:
 
@@ -58,6 +61,7 @@ Internal changes:
 - Replace the deprecated codecov python uploader with the binary uploader. (:issue:`770`)
 - Add gcc-12 and gcc-13 to the test suite. (:issue:`780`)
 - Add sessions to run the targets for all versions of ``gcc`` or ``clang``. (:issue:`782`)
+- Use ``build`` instead of calling ``setup.py`` directly. (:issue:`819`)
 
 6.0 (08 March 2023)
 -------------------
