@@ -3,8 +3,8 @@
 .. program is needed to resolve option links
 .. program::  gcovr
 
-Next Release
-------------
+7.0 (25 January 2024)
+---------------------
 
 Known bugs:
 
@@ -39,7 +39,7 @@ New features and notable changes:
 - Use different color for partial covered lines in HTML report. (:issue:`839`)
 - Add support to generate LCOV info files. (:issue:`830`)
 - Add support for FIPS enabled OS when used with Python 3.9. (:issue:`850`)
-- Reduce file size for detailed HTML reports by using CSS to link the function lists. (:issue:`840`)
+- Reduce file size for detailed HTML reports by merging columns the function lists. (:issue:`840`)
 - Ignore all negative hits if :option:`--gcov-ignore-parse-errors` is used. (:issue:`852`)
 - Use literal options for sorting and TXT metric. (:issue:`867`)
 
@@ -52,6 +52,7 @@ New features and notable changes:
 
 - The development branch is renamed from ``master`` to ``main``. (:issue:`829`, :issue:`873`)
 - Add support for decision coverage metric in text report (:issue:`864`)
+- Split list of functions into tables with maximum 10000 rows to fix rendering issues. (:issue:`858`)
 
 Bug fixes and small improvements:
 
