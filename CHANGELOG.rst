@@ -13,6 +13,7 @@ Breaking changes:
 New features and notable changes:
 
 - Add support for colored logging. (:issue:`887`)
+- Add support for TOML configuration format. (:issue:`881`) 
 
 Bug fixes and small improvements:
 
@@ -24,8 +25,9 @@ Documentation:
 
 Internal changes:
 
-- Improve Dockerfile for faster rebuilds by using cache. (:issue:`878`) 
+- Improve Dockerfile for faster rebuilds by using cache. (:issue:`878`)
 - Fix deprecation warnings from GitHub actions. (:issue:`880`) 
+- Add pipeline job to apply tag if new version is bumped. (:issue:`879`)
 
 7.0 (25 January 2024)
 ---------------------
