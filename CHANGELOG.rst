@@ -15,6 +15,7 @@ New features and notable changes:
 - Add support for colored logging. (:issue:`887`)
 - Add support for TOML configuration format. (:issue:`881`) 
 - Add support for Clover XML output format. (:issue:`888`) 
+- Add decision to JSON summary report if :option:`--decisions` is used. (:issue:`892`) 
 
 Bug fixes and small improvements:
 
@@ -30,6 +31,7 @@ Internal changes:
 - Improve Dockerfile for faster rebuilds by using cache. (:issue:`878`)
 - Fix deprecation warnings from GitHub actions. (:issue:`880`) 
 - Add pipeline job to apply tag if new version is bumped. (:issue:`879`)
+- Improve test coverage and generate coverage report if executed in local environment. (:issue:`891`) 
 
 7.0 (25 January 2024)
 ---------------------
