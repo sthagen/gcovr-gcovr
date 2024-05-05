@@ -44,6 +44,7 @@ ALL_COMPILER_VERSIONS = [
     "gcc-11",
     "gcc-12",
     "gcc-13",
+    "gcc-14",
     "clang-10",
     "clang-13",
     "clang-14",
@@ -320,30 +321,34 @@ def upload_wheel(session: nox.Session) -> None:
 def bundle_app(session: nox.Session) -> None:
     """Bundle a standalone executable."""
     session.install("pyinstaller~=5.13.2")
-    session.install("-e", ".")
+    # This is needed if the virtual env is reused
+    session.run("pip", "uninstall", "gcovr")
+    # Do not install interactive to get the module resolved
+    # with the needed data
+    session.install(".")
     os.makedirs("build", exist_ok=True)
-    session.chdir("build")
-    if platform.system() == "Windows":
-        executable = "gcovr.exe"
-    else:
-        executable = "gcovr"
-    session.run(
-        "pyinstaller",
-        "--distpath",
-        ".",
-        "--workpath",
-        "./pyinstaller",
-        "--specpath",
-        "./pyinstaller",
-        "--onefile",
-        "--collect-all",
-        "gcovr.formats",
-        "-n",
-        executable,
-        *session.posargs,
-        "../scripts/pyinstaller_entrypoint.py",
-    )
-    session.notify("check_bundled_app")
+    with session.chdir("build"):
+        if platform.system() == "Windows":
+            executable = "gcovr.exe"
+        else:
+            executable = "gcovr"
+        session.run(
+            "pyinstaller",
+            "--distpath",
+            ".",
+            "--workpath",
+            "./pyinstaller",
+            "--specpath",
+            "./pyinstaller",
+            "--onefile",
+            "--collect-all",
+            "gcovr",
+            "-n",
+            executable,
+            *session.posargs,
+            "../scripts/pyinstaller_entrypoint.py",
+        )
+        session.notify("check_bundled_app")
 
 
 @nox.session(python=False)
@@ -472,6 +477,8 @@ def docker_container_os(session: nox.Session) -> str:
         return "ubuntu:22.04"
     elif session.env["CC"] in ["gcc-12", "gcc-13"]:
         return "ubuntu:23.04"
+    elif session.env["CC"] in ["gcc-14"]:
+        return "ubuntu:24.04"
 
     raise RuntimeError(f"No container image defined for {session.env['CC']}")
 
