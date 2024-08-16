@@ -1,0 +1,190 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: CI
+
+on:
+  workflow_dispatch: # For manual triggering
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  release:
+    types: [published]
+
+jobs:
+
+  milestone-check:
+    runs-on: ubuntu-22.04
+
+    continue-on-error: true
+
+    env:
+      PR_MILESTONE: "${{ github.event.pull_request.milestone.number }}"
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check if PR is assigned to a milestone
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [ -z "$PR_MILESTONE" ]; then
+            echo 'No milestone selected for PR'
+            exit 1
+          fi
+          exit 0
+
+  changelog-check:
+    runs-on: ubuntu-22.04
+
+    env:
+      PR_BODY: "${{ github.event.pull_request.body }}"
+      CHANGELOG_ISSUE: ":issue:`${{ github.event.pull_request.number }}`"
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check if PR is mentioned in changelog
+        if: ${{ always() }}
+        run: |
+          if [ -z "${{ github.event.pull_request.number }}" ]; then
+            echo 'No PR defined'
+          else
+            if grep -qE '^\[no changelog\]' <<<"$PR_BODY"; then
+              echo 'Marker "[no changelog]" found in PR body'
+              if [ "$(grep -F "$CHANGELOG_ISSUE" CHANGELOG.rst)" != "" ]; then
+                echo "ERROR: $CHANGELOG_ISSUE found in CHANGELOG.rst."
+                exit 1
+              else
+                echo "OK: $CHANGELOG_ISSUE not found in CHANGELOG.rst"
+              fi
+            else
+              echo 'Marker "[no changelog]" not found in PR body'
+              if [ "$(grep -F "$CHANGELOG_ISSUE" CHANGELOG.rst)" == "" ]; then
+                echo "ERROR: $CHANGELOG_ISSUE not found in CHANGELOG.rst."
+                exit 1
+              else
+                echo "OK: $CHANGELOG_ISSUE found in CHANGELOG.rst"
+              fi
+            fi
+          fi
+          exit 0
+
+  spell-check:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install spellchecker
+        run:
+          npm install -g cspell@latest
+      - name: Run spellchecker
+        run: |
+          cspell
+
+
+  host:
+    needs: [milestone-check, changelog-check, spell-check]
+    uses: ./.github/workflows/gcovr-ci-job.yml
+    with:
+      os: ${{ matrix.os }}
+      gcc: ${{ matrix.gcc }}
+      python-version: ${{ matrix.python-version }}
+      upload-wheel: ${{ matrix.upload-wheel || false }}  # Explicit set to false if not set
+      upload-app: ${{ matrix.upload-app || false }}  # Explicit set to false if not set
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    # Testing strategy
+    # ----------------
+    #
+    # We have different axes of the testing matrix:
+    #
+    # OS: Linux, Windows
+    # Compiler: GCC-5 to GCC-14, Clang-10 to CLANG-15
+    # Python: 3.8 -- 3.12, pypy3
+    #
+    # Instead of testing all combinations, we try to achieve full coverage
+    # across each axis. The main test matrix just represents the Python axis on
+    # Linux. The OS=Windows and Compiler axis are added manually.
+    #
+    # Some cases (Clang compiler) are handled via the Docker-tests.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04]
+        gcc: [gcc-8]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', 'pypy-3.8']
+
+        include:
+
+          # Test additional compilers with Linux.
+          # Note that all compiler versions are also handled via Docker.
+          - os: ubuntu-20.04
+            gcc: gcc-9
+            python-version: '3.9'
+          - os: ubuntu-22.04
+            gcc: gcc-11
+            python-version: '3.12'
+            upload-wheel: true
+            upload-app: true
+
+          # Test minimum and maximum Python version on Windows.
+          - os: windows-2019
+            gcc: gcc
+            python-version: '3.8'
+          - os: windows-2019
+            gcc: gcc
+            python-version: '3.12'
+            upload-app: true
+
+          # Test minimum and maximum Python version on Mac OS.
+          - os: macos-12
+            gcc: gcc
+            python-version: '3.12'
+            upload-app: true
+          - os: macos-13
+            gcc: gcc
+            python-version: '3.12'
+            upload-app: true
+          - os: macos-14
+            gcc: gcc
+            python-version: '3.9'
+          - os: macos-14
+            gcc: gcc-13
+            python-version: '3.12'
+            upload-app: true
+
+  docker:
+    needs: [milestone-check, changelog-check, spell-check]
+    uses: ./.github/workflows/gcovr-ci-job.yml
+    with:
+      container: true
+      gcc: ${{ matrix.gcc }}
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        gcc: [gcc-5, gcc-6, gcc-8, gcc-9, gcc-10, gcc-11, gcc-12, gcc-13, gcc-14, clang-10, clang-13, clang-14, clang-15]
+
+
+  upload-release-artifacts:
+    name: Upload standalone applications as release artifacts
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
+    needs: [host, docker]
+    steps:
+      - name: Download App Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: app
+          pattern: app-*
+          merge-multiple: true
+
+      - name: Upload Release Artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/*
