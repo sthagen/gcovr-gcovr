@@ -20,6 +20,7 @@ New features and notable changes:
 - Upload standalone applications as release artifacts. (:issue:`941`)
 - Add support for GCOV JSON intermediate format. (:issue:`766`)
 - Add function position and block information to data model if ``gcov`` JSON format is used. (:issue:`954`)
+- Add :ref:`Exclusion markers` to exclude a while function. (:issue:`955`)
 
 Bug fixes and small improvements:
 
@@ -30,6 +31,7 @@ Bug fixes and small improvements:
 - Fix bundle of standalone executable with Python 3.12. (:issue:`924`)
 - Fix merging of function coverage data. (:issue:`925`)
 - Fix inefficient regular expression. (:issue:`933`)
+- Fix missing output of gcov if execution fails. (:issue:`956`)
 
 Documentation:
 
