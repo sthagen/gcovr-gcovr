@@ -21,6 +21,7 @@ New features and notable changes:
 - Add support for GCOV JSON intermediate format. (:issue:`766`)
 - Add function position and block information to data model if ``gcov`` JSON format is used. (:issue:`954`)
 - Add :ref:`Exclusion markers` to exclude a while function. (:issue:`955`)
+- Change sort order in JSON output files. (:issue:`959`)
 
 Bug fixes and small improvements:
 
@@ -53,6 +54,7 @@ Internal changes:
 - Merge the test and deploy workflow to a single CI workflow. (:issue:`946`, :issue:`947`)
 - Add Codacy to CI workflow for tracking coverage and code quality. (:issue:`948`)
 - Add ``bandit`` to the linters. (:issue:`949`)
+- Remove Codecov upload from pipeline. (:issue:`958`)
 
 7.2 (24 February 2024)
 ----------------------
