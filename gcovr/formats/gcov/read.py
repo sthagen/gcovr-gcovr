@@ -2,7 +2,7 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 7.2+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.0+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
@@ -812,7 +812,9 @@ class GcovProgram:
         """
         gcov_process = self.__get_gcov_process(args, **kwargs)
         out, err = gcov_process.communicate()
-        LOGGER.debug(f"GCOV return code was {gcov_process.returncode}")
+        LOGGER.debug(
+            f"GCOV return code was {gcov_process.returncode}, stderr was:\n{err}<<"
+        )
         if gcov_process.returncode < 0:
             raise RuntimeError(
                 f"GCOV returncode was {gcov_process.returncode} (exited by signal).\n"

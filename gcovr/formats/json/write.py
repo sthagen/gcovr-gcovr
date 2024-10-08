@@ -2,7 +2,7 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 7.2+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.0+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
@@ -217,6 +217,8 @@ def _json_from_branch(branch: BranchCoverage) -> dict:
     }
     if branch.destination_blockno is not None:
         json_branch["destination_blockno"] = branch.destination_blockno
+    if branch.excluded is not None:
+        json_branch["gcovr/excluded"] = branch.excluded
 
     return json_branch
 

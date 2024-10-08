@@ -2,7 +2,7 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 7.2+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.0+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
@@ -41,7 +41,7 @@ python_interpreter = force_unix_separator(
     sys.executable
 )  # use forward slash on windows as well
 env = os.environ
-env["SOURCE_DATE_EPOCH"] = "1708895236"
+env["SOURCE_DATE_EPOCH"] = "1728370618"
 env["GCOVR"] = python_interpreter + " -m gcovr"
 for var in [
     "CPATH",
@@ -338,6 +338,10 @@ def pytest_generate_tests(metafunc):
                 continue
 
             marks = [
+                pytest.mark.skipif(
+                    name in ["bazel"] and (IS_WINDOWS or IS_MACOS and IS_GCC),
+                    reason="Bazel test not working on Windows or on MacOs (with gcc).",
+                ),
                 pytest.mark.skipif(
                     name == "simple1-drive-subst" and not IS_WINDOWS,
                     reason="drive substitution only available on Windows",

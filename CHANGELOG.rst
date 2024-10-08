@@ -10,7 +10,23 @@ Known bugs:
 
 Breaking changes:
 
-- Changes related ot added support of ``gcov`` JSON intermediate format:
+New features and notable changes:
+
+Bug fixes and small improvements:
+
+Documentation:
+
+Internal changes:
+
+
+8.0 (07 October 2024)
+---------------------
+
+Known bugs:
+
+Breaking changes:
+
+- Changes related to added support of ``gcov`` JSON intermediate format:
 
   - The function return count is removed from internal data model, HTML and JSON output because missing in
     ``gcov`` JSON intermediate format. (:issue:`935`)
@@ -33,6 +49,7 @@ New features and notable changes:
 
 - Add :ref:`Exclusion markers` to exclude a while function. (:issue:`955`)
 - Change sort order in JSON output files. (:issue:`959`)
+- Add source exclusion markers to exclude source branch from target line. (:issue:`961`)
 
 Bug fixes and small improvements:
 
@@ -66,6 +83,7 @@ Internal changes:
 - Add Codacy to CI workflow for tracking coverage and code quality. (:issue:`948`)
 - Add ``bandit`` to the linters. (:issue:`949`)
 - Remove Codecov upload from pipeline. (:issue:`958`)
+- Add test with ``bazel`` tests. (:issue:`969`)
 
 7.2 (24 February 2024)
 ----------------------

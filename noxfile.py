@@ -2,7 +2,7 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 7.2+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.0+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
@@ -481,7 +481,7 @@ def html2jpeg(session: nox.Session):
                 "html": content,
                 "export": {
                     "type": "jpeg",
-                    "fullPage": "false",
+                    "fullPage": False,
                     "clip": {"x": 1, "y": 1, "width": size[0], "height": size[1]},
                 },
             }
