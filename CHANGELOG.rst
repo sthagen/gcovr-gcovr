@@ -12,7 +12,13 @@ Breaking changes:
 
 New features and notable changes:
 
+- Add condition coverage to text summary report. (:issue:`985`)
+
 Bug fixes and small improvements:
+
+- Fixed an error handling bug throwing a `TypeError` exception on a gcov merge assertion failure
+  instead of reporting the error and (if requested by the user) continuing execution. (:issue:`997`)
+- Check format version of external generated ``gcov`` JSON files. (:issue:`999`)
 
 Documentation:
 
