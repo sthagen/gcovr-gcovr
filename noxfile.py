@@ -28,6 +28,7 @@ import sys
 from pathlib import Path
 import textwrap
 from time import sleep
+import time
 from typing import Tuple
 import requests
 import shutil
@@ -93,6 +94,8 @@ GCOVR_VERSION_PY = Path(__file__).parent / "gcovr" / "version.py"
 GCOVR_CHANGELOG_RST = Path(__file__).parent / "CHANGELOG.rst"
 
 nox.options.sessions = ["qa"]
+# Inject the timestamp into setup.py
+os.environ["TIMESTAMP"] = str(int(time.time()))
 
 
 def get_gcc_versions() -> Tuple[str]:
