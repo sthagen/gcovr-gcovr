@@ -35,7 +35,6 @@ report aggregated metrics/percentages.
 """
 
 from __future__ import annotations
-from collections import OrderedDict
 import logging
 import os
 import re
@@ -99,7 +98,7 @@ def sort_coverage(
         cov = covdata[key]
         if by_metric == "branch":
             return cov.branch_coverage()
-        elif by_metric == "decision":
+        if by_metric == "decision":
             return cov.decision_coverage()
         return cov.line_coverage()
 
@@ -190,6 +189,7 @@ class BranchCoverage:
 
     @property
     def is_covered(self) -> bool:
+        """Return True if the branch is covered."""
         return self.count > 0
 
 
@@ -215,6 +215,7 @@ class CallCoverage:
 
     @property
     def is_covered(self) -> bool:
+        """Return True if the call is covered."""
         return self.covered
 
 
@@ -423,8 +424,8 @@ class LineCoverage:
         self.count: int = count
         self.function_name: Optional[str] = function_name
         self.block_ids: Optional[List[int]] = block_ids
-        self.excluded: Optional[bool] = excluded
         self.md5: Optional[str] = md5
+        self.excluded: Optional[bool] = excluded
         self.branches: Dict[int, BranchCoverage] = {}
         self.conditions: Optional[Dict[int, ConditionCoverage]] = {}
         self.decision: Optional[DecisionCoverage] = None
@@ -432,26 +433,32 @@ class LineCoverage:
 
     @property
     def is_excluded(self) -> bool:
+        """Return True if the line is excluded."""
         return self.excluded
 
     @property
     def is_reportable(self) -> bool:
+        """Return True if the line is reportable."""
         return not self.excluded
 
     @property
     def is_covered(self) -> bool:
+        """Return True if the line is covered."""
         return self.is_reportable and self.count > 0
 
     @property
     def is_uncovered(self) -> bool:
+        """Return True if the line is uncovered."""
         return self.is_reportable and self.count == 0
 
     @property
     def has_uncovered_branch(self) -> bool:
+        """Return True if the line has a uncovered branches."""
         return not all(branch.is_covered for branch in self.branches.values())
 
     @property
     def has_uncovered_decision(self) -> bool:
+        """Return True if the line has a uncovered decision."""
         if self.decision is None:
             return False
 
@@ -464,18 +471,31 @@ class LineCoverage:
         if isinstance(self.decision, DecisionCoverageSwitch):
             return self.decision.count == 0
 
+        raise AssertionError(f"Unknown decision type: {self.decision!r}")
+
+    def exclude(self) -> None:
+        """Exclude line from  coverage statistic."""
+        self.excluded = True
+        self.count = 0
+        self.branches.clear()
+        self.conditions.clear()
+        self.decision = None
+        self.calls.clear()
+
     def branch_coverage(self) -> CoverageStat:
+        """Return the branch coverage statistic of the line."""
         total = len(self.branches)
         covered = 0
-        for branch in self.branches.values():
-            if branch.excluded:
+        for branchcov in self.branches.values():
+            if branchcov.excluded:
                 total -= 1
-            elif branch.is_covered:
+            elif branchcov.is_covered:
                 covered += 1
 
         return CoverageStat(covered=covered, total=total)
 
     def condition_coverage(self) -> CoverageStat:
+        """Return the condition coverage statistic of the line."""
         total = 0
         covered = 0
         for condition in self.conditions.values():
@@ -484,6 +504,7 @@ class LineCoverage:
         return CoverageStat(covered=covered, total=total)
 
     def decision_coverage(self) -> DecisionCoverageStat:
+        """Return the decision coverage statistic of the line."""
         if self.decision is None:
             return DecisionCoverageStat(0, 0, 0)
 
@@ -508,6 +529,8 @@ class LineCoverage:
 
 
 class FileCoverage:
+    """Represent coverage information about a file."""
+
     __slots__ = "filename", "functions", "lines", "parent_dirname", "data_sources"
 
     def __init__(
@@ -537,14 +560,15 @@ class FileCoverage:
         filecov.functions[functioncov.name] = functioncov
 
         filecov.lines = {
-            line: value
-            for line, value in self.lines.items()
-            if value.function_name == functioncov.name
+            line: linecov
+            for line, linecov in self.lines.items()
+            if linecov.function_name == functioncov.name
         }
 
         return filecov
 
     def function_coverage(self) -> CoverageStat:
+        """Return the function coverage statistic of the file."""
         total = 0
         covered = 0
 
@@ -558,51 +582,56 @@ class FileCoverage:
         return CoverageStat(covered, total)
 
     def line_coverage(self) -> CoverageStat:
+        """Return the line coverage statistic of the file."""
         total = 0
         covered = 0
 
-        for line in self.lines.values():
-            if line.is_reportable:
+        for linecov in self.lines.values():
+            if linecov.is_reportable:
                 total += 1
-                if line.is_covered:
+                if linecov.is_covered:
                     covered += 1
 
         return CoverageStat(covered, total)
 
     def branch_coverage(self) -> CoverageStat:
+        """Return the branch coverage statistic of the file."""
         stat = CoverageStat.new_empty()
 
-        for line in self.lines.values():
-            if line.is_reportable:
-                stat += line.branch_coverage()
+        for linecov in self.lines.values():
+            if linecov.is_reportable:
+                stat += linecov.branch_coverage()
 
         return stat
 
     def condition_coverage(self) -> CoverageStat:
+        """Return the condition coverage statistic of the file."""
         stat = CoverageStat.new_empty()
 
-        for line in self.lines.values():
-            if line.is_reportable:
-                stat += line.condition_coverage()
+        for linecov in self.lines.values():
+            if linecov.is_reportable:
+                stat += linecov.condition_coverage()
 
         return stat
 
     def decision_coverage(self) -> DecisionCoverageStat:
+        """Return the decision coverage statistic of the file."""
         stat = DecisionCoverageStat.new_empty()
 
-        for line in self.lines.values():
-            if line.is_reportable:
-                stat += line.decision_coverage()
+        for linecov in self.lines.values():
+            if linecov.is_reportable:
+                stat += linecov.decision_coverage()
 
         return stat
 
     def call_coverage(self) -> CoverageStat:
+        """Return the call coverage statistic of the file."""
         covered = 0
         total = 0
 
-        for line in self.lines.values():
-            if len(line.calls) > 0:
-                for call in line.calls.values():
+        for linecov in self.lines.values():
+            if linecov.is_reportable and len(linecov.calls) > 0:
+                for call in linecov.calls.values():
                     total += 1
                     if call.is_covered:
                         covered += 1
@@ -614,6 +643,8 @@ CovData = Dict[str, FileCoverage]
 
 
 class DirectoryCoverage:
+    """Represent coverage information about a directory."""
+
     __slots__ = "dirname", "parent_dirname", "children", "stats"
 
     def __init__(self, dirname: str) -> None:
@@ -631,7 +662,8 @@ class DirectoryCoverage:
         return None
 
     @staticmethod
-    def directory_root(subdirs: CovData_directories, root_filter: re.Pattern) -> str:
+    def directory_root(subdirs: CovDataDirectories) -> str:
+        """Get the root directory."""
         if not subdirs:
             return os.sep
         # The first directory is the shortest one --> This is the root dir
@@ -640,7 +672,7 @@ class DirectoryCoverage:
     @staticmethod
     def from_covdata(
         covdata: CovData, sorted_keys: Iterable, root_filter: re.Pattern
-    ) -> CovData_directories:
+    ) -> CovDataDirectories:
         r"""Add a file coverage item to the directory structure and accumulate stats.
 
         This recursive function will accumulate statistics such that every directory
@@ -654,7 +686,7 @@ class DirectoryCoverage:
         """
 
         dirname_root = None
-        subdirs: CovData_directories = OrderedDict()
+        subdirs: CovDataDirectories = {}
         for key in sorted_keys:
             filecov = covdata[key]
             dircov = filecov
@@ -671,21 +703,27 @@ class DirectoryCoverage:
                 dircov = subdirs[dirname]
 
         collapse_dirs = set()
-        for dirname, covdata in subdirs.items():
-            if isinstance(covdata, DirectoryCoverage) and len(covdata.children) == 1:
-                parent_dirname = covdata.parent_dirname
+        for dirname, covdata_directory in subdirs.items():
+            if (
+                isinstance(covdata_directory, DirectoryCoverage)
+                and len(covdata_directory.children) == 1
+            ):
+                parent_dirname = covdata_directory.parent_dirname
                 # Get the key and value of the only child
-                orphan_key = next(iter(covdata.children))
-                orphan_value = covdata.children[orphan_key]
+                orphan_key = next(iter(covdata_directory.children))
+                orphan_value = covdata_directory.children[orphan_key]
                 # Change the parent key
                 orphan_value.parent_dirname = parent_dirname
                 if dirname == dirname_root:
                     # The only child is not a File object
                     if not isinstance(orphan_value, FileCoverage):
                         # Replace the children with the orphan ones
-                        covdata.children = orphan_value.children
+                        covdata_directory.children = orphan_value.children
                         # Change the parent key of each new child element
-                        for new_child_key, new_child_value in covdata.children.items():
+                        for (
+                            new_child_key,
+                            new_child_value,
+                        ) in covdata_directory.children.items():
                             new_child_value.parent_dirname = dirname
                             if isinstance(new_child_value, DirectoryCoverage):
                                 subdirs[new_child_key].parent_dirname = dirname
@@ -718,11 +756,13 @@ class DirectoryCoverage:
         return self.stats.branch
 
 
-CovData_directories = Dict[str, DirectoryCoverage]
+CovDataDirectories = Dict[str, DirectoryCoverage]
 
 
 @dataclass
 class SummarizedStats:
+    """Data class for the summarized coverage statistics."""
+
     line: CoverageStat
     branch: CoverageStat
     condition: CoverageStat
@@ -732,6 +772,7 @@ class SummarizedStats:
 
     @staticmethod
     def new_empty() -> SummarizedStats:
+        """Create a empty coverage statistic."""
         return SummarizedStats(
             line=CoverageStat.new_empty(),
             branch=CoverageStat.new_empty(),
@@ -743,6 +784,7 @@ class SummarizedStats:
 
     @staticmethod
     def from_covdata(covdata: CovData) -> SummarizedStats:
+        """Create a coverage statistic from a coverage data object."""
         stats = SummarizedStats.new_empty()
         for filecov in covdata.values():
             stats += SummarizedStats.from_file(filecov)
@@ -750,6 +792,7 @@ class SummarizedStats:
 
     @staticmethod
     def from_file(filecov: FileCoverage) -> SummarizedStats:
+        """Create a coverage statistic of a file coverage object."""
         return SummarizedStats(
             line=filecov.line_coverage(),
             branch=filecov.branch_coverage(),
@@ -781,6 +824,7 @@ class CoverageStat:
 
     @staticmethod
     def new_empty() -> CoverageStat:
+        """Create a empty coverage statistic."""
         return CoverageStat(0, 0)
 
     @property
@@ -789,8 +833,7 @@ class CoverageStat:
         return self.percent_or(None)
 
     def percent_or(self, default: _T) -> Union[float, _T]:
-        """
-        Percentage of covered elements.
+        """Percentage of covered elements.
 
         Coverage is truncated to one decimal:
         >>> CoverageStat(1234, 10000).percent_or("default")
@@ -834,17 +877,21 @@ class DecisionCoverageStat:
 
     @classmethod
     def new_empty(cls) -> DecisionCoverageStat:
+        """Create a empty decision coverage statistic."""
         return cls(0, 0, 0)
 
     @property
     def to_coverage_stat(self) -> CoverageStat:
+        """Convert a decision coverage statistic to a coverage statistic."""
         return CoverageStat(covered=self.covered, total=self.total)
 
     @property
     def percent(self) -> Optional[float]:
+        """Return the percent value of the coverage."""
         return self.to_coverage_stat.percent
 
     def percent_or(self, default: _T) -> Union[float, _T]:
+        """Return the percent value of the coverage or the given default if no coverage is present."""
         return self.to_coverage_stat.percent_or(default)
 
     def __iadd__(self, other: DecisionCoverageStat) -> DecisionCoverageStat:

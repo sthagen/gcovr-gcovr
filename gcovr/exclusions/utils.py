@@ -72,6 +72,7 @@ def get_functions_by_line(filecov: FileCoverage) -> FunctionListByLine:
 def get_function_exclude_ranges(
     filename: str, lineno: int, columnno: int, *, functions_by_line: FunctionListByLine
 ) -> List[Tuple[int, int]]:
+    """Get the exclude range for a given function."""
     exclude_ranges = []
     if functions_by_line:
         lineno_end = None
@@ -156,7 +157,7 @@ def apply_exclusion_ranges(
                 function.excluded[lineno] = True
 
 
-def _make_is_in_any_range_inclusive(
+def make_is_in_any_range_inclusive(
     ranges: List[Tuple[int, int]],
 ) -> ExclusionPredicate:
     """
@@ -166,7 +167,7 @@ def _make_is_in_any_range_inclusive(
     if queries are mostly made in ascending order.
 
     Example:
-    >>> select = _make_is_in_any_range_inclusive([(3,3), (5,7)])
+    >>> select = make_is_in_any_range_inclusive([(3,3), (5,7)])
     >>> select(0)
     False
     >>> select(6)
