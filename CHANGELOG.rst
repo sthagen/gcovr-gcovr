@@ -25,6 +25,7 @@ Bug fixes and small improvements:
 - Check format version of external generated ``gcov`` JSON files. (:issue:`999`)
 - Fix crash on Windows when trying to fix the case of the files. (:issue:`1000`)
 - Fix LCOV report. Excluded lines where added with a count of 0. (:issue:`1012`)
+- Fix line exclusion not clearing all child coverage data. (:issue:`1018`)
 
 Documentation:
 
@@ -36,6 +37,7 @@ Internal changes:
 - Fix sporadic timestamp mismatch in development build package. (:issue:`1006`)
 - Replace ``black`` and ``flake8`` with ``ruff`` and move configuration of ``pytest`` to ``pyproject.toml``. (:issue:`1007`)
 - Add ``pylint`` for testing code. (:issue:`1014`)
+- Align variable names across the files. (:issue:`1015`)
 
 8.2 (13 October 2024)
 ---------------------
