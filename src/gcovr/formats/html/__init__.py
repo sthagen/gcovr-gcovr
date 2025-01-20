@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.2+main, a parsing and reporting tool for gcov.
-# https://gcovr.com/en/main
+# This file is part of gcovr 8.3, a parsing and reporting tool for gcov.
+# https://gcovr.com/en/8.3
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2024 the gcovr authors
+# Copyright (c) 2013-2025 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -95,12 +95,21 @@ class HtmlHandler(BaseHandler):
                 const=OutputOrDefault(None),
             ),
             GcovrConfigOption(
+                "html_block_ids",
+                ["--html-block-ids"],
+                group="output_options",
+                help=(
+                    "Add the block ids to the HTML report for debugging the branch coverage."
+                ),
+                action="store_true",
+            ),
+            GcovrConfigOption(
                 "html_template_dir",
                 ["--html-template-dir"],
                 group="output_options",
                 metavar="OUTPUT",
                 help=(
-                    "Override the default Jinja2 template directory for the HTML report. "
+                    "Override the default Jinja2 template directory for the HTML report."
                 ),
             ),
             GcovrConfigOption(
