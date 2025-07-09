@@ -460,6 +460,8 @@ def tests(session: nox.Session) -> None:
     if "llvm-cov" in gcov:
         gcov += " gcov"
     session.env["GCOV"] = gcov
+    session.run("make", "--version", external=True)
+    session.run("ninja", "--version", external=True)
     session.log(f"Using reference data for {session.env['CC_REFERENCE']}")
 
     with session.chdir("tests"):
@@ -517,7 +519,7 @@ def validate_reports(session: nox.Session) -> None:
 
 
 @nox.session
-def build_wheel(session: nox.Session) -> None:
+def build_distribution(session: nox.Session) -> None:
     """Build a wheel."""
     session.install("build")
     # Remove old dist if present
@@ -525,11 +527,11 @@ def build_wheel(session: nox.Session) -> None:
     if dist_dir.exists():
         shutil.rmtree(dist_dir)
     session.run("python", "-m", "build")
-    session.notify(("check_wheel"))
+    session.notify(("check_distribution"))
 
 
 @nox.session
-def check_wheel(session: nox.Session) -> None:
+def check_distribution(session: nox.Session) -> None:
     """Check the wheel and do a smoke test, should not be used directly."""
     session.install("wheel", "twine")
     with session.chdir("dist"):
@@ -544,13 +546,6 @@ def check_wheel(session: nox.Session) -> None:
             session.run(
                 "gcovr", f"--{output_format}", f"out.{output_format}", external=True
             )
-
-
-@nox.session
-def upload_wheel(session: nox.Session) -> None:
-    """Upload the wheel."""
-    session.install("twine")
-    session.run("twine", "upload", "dist/*", external=True)
 
 
 @functools.lru_cache(maxsize=1)
@@ -590,6 +585,9 @@ def bundle_app(session: nox.Session) -> None:
             "./pyinstaller",
             "--specpath",
             "./pyinstaller",
+            # Workaround for "UserWarning: pkg_resources is deprecated as an API"
+            "--exclude-module",
+            "pkg_resources",
             "--onefile",
             "--collect-all",
             "gcovr",
