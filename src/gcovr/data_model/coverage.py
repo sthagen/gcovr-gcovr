@@ -1943,7 +1943,7 @@ class FileCoverage(CoverageBase):
             os.path.abspath(options.root), os.path.normpath(data_dict["file"])
         )
 
-        if is_file_excluded(filename, options.filter, options.exclude):
+        if is_file_excluded(filename, options.include_filter, options.exclude_filter):
             return None
 
         def get_data_sources(data_dict: dict[str, Any]) -> set[tuple[str, ...]]:
@@ -2023,6 +2023,15 @@ class FileCoverage(CoverageBase):
             self.lines_keys_by_lineno[linecov.lineno].add(key)
 
         return self.lines[key]
+
+    def remove_line_coverage(self, linecov_list: list[LineCoverage]) -> None:
+        """Remove line coverage objects from File.
+
+        Objects can be added by the text parser if a normal function is followed by a template.
+        This specialization is detected too late and we need to remove the lines again.
+        """
+        for linecov in linecov_list:
+            del self.lines[linecov.key]
 
     def insert_function_coverage(
         self,
