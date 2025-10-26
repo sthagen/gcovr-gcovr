@@ -17,6 +17,7 @@ Bug fixes and small improvements:
 - Fix coveralls report if there are several coverage elements per line. (:issue:`1165`)
 - Fix not excluded conditions if branches are excluded by comments. (:issue:`1171`)
 - Fix reported excluded branches in ``LCOV`` report. (:issue:`1171`)
+- Fix exclusion filter :option:`--gcov-exclude`. (:issue:`1176`)
 
 Documentation:
 
@@ -33,6 +34,8 @@ Internal changes:
 
   - Remove test with MacOs 13 because image will be retired by December 4th, 2025.
 
+- Activate parallel test execution by default and improve IDE support. (:issue:`1174`)
+
 .. _release_8_4:
 
 8.4 (27 September 2025)
@@ -43,6 +46,7 @@ Known bugs:
 - :ref:`fix_1165`
 - :ref:`fix_1171_1`
 - :ref:`fix_1171_2`
+- :ref:`fix_1176`
 
 Breaking changes:
 
@@ -153,6 +157,7 @@ Known bugs:
 - :ref:`fix_1130`
 - :ref:`fix_1138`
 - :ref:`fix_1171_1`
+- :ref:`fix_1176`
 
 Breaking changes:
 
