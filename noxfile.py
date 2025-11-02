@@ -60,6 +60,22 @@ ALL_COMPILER_VERSIONS_NEWEST_FIRST = [
 ALL_GCC_VERSIONS = [v for v in ALL_COMPILER_VERSIONS if v.startswith("gcc-")]
 ALL_CLANG_VERSIONS = [v for v in ALL_COMPILER_VERSIONS if v.startswith("clang-")]
 
+CC_VERSIONS_BY_OS_VERSION = {
+    "18.04": ["gcc-5", "gcc-6"],
+    "20.04": ["gcc-7", "gcc-8", "gcc-9", "clang-10", "clang-11", "clang-12"],
+    "22.04": ["gcc-10", "gcc-11", "clang-13", "clang-14", "clang-15"],
+    "24.04": [
+        "gcc-12",
+        "gcc-13",
+        "gcc-14",
+        "clang-16",
+        "clang-17",
+        "clang-18",
+        "clang-19",
+    ],
+    "25.04": ["gcc-15", "clang-20"],
+}
+
 DEFAULT_TEST_DIRECTORIES = ["doc/examples", "src", "tests"]
 DEFAULT_LINT_ARGUMENTS = [
     "noxfile.py",
@@ -646,31 +662,16 @@ def html2jpeg(session: nox.Session) -> None:
 
 def docker_container_os_version(cc: str) -> str:
     """Get the version of the OS for the used GCC version."""
-    if cc in ["gcc-5", "gcc-6"]:
-        return "18.04"
-    if cc in ["gcc-7", "gcc-8", "gcc-9", "clang-10", "clang-11", "clang-12"]:
-        return "20.04"
-    if cc in ["gcc-10", "gcc-11", "clang-13", "clang-14", "clang-15"]:
-        return "22.04"
-    if cc in [
-        "gcc-12",
-        "gcc-13",
-        "gcc-14",
-        "clang-16",
-        "clang-17",
-        "clang-18",
-        "clang-19",
-    ]:
-        return "24.04"
-    if cc in ["gcc-15", "clang-20"]:
-        return "25.04"
+    for os_version, cc_versions in CC_VERSIONS_BY_OS_VERSION.items():
+        if cc in cc_versions:
+            return os_version
 
     raise RuntimeError(f"No container image defined for {cc}")
 
 
-def docker_container_tag(version: str) -> str:
+def docker_container_tag(cc: str) -> str:
     """Get the docker container ID."""
-    return f"gcovr-test:{version}-uid_{os.geteuid()}"
+    return f"gcovr-test:{docker_container_os_version(cc)}-uid_{os.geteuid()}"
 
 
 @nox.session(python=False)
@@ -712,7 +713,7 @@ def docker_build_compiler_clang(session: nox.Session) -> None:
 @nox.parametrize("cc", [nox.param(v, id=v) for v in ALL_COMPILER_VERSIONS])
 def docker_build_compiler(session: nox.Session, cc: str) -> None:
     """Build the docker container for a specific GCC version."""
-    container_tag = docker_container_tag(cc)
+    ubuntu_tag = docker_container_os_version(cc)
     cache_options = []
     if CI_RUN:
         session.log(
@@ -731,7 +732,7 @@ def docker_build_compiler(session: nox.Session, cc: str) -> None:
         cache_options += [
             "--builder=gha-container",
             "--cache-from",
-            f"type=gha,scope={container_tag}",
+            f"type=gha,scope={cc}",
         ]
         # Only update cache on main branch. The cache size is restricted
         # and updating from PR branch destroys cache of main branch.
@@ -739,21 +740,24 @@ def docker_build_compiler(session: nox.Session, cc: str) -> None:
         if os.environ["GITHUB_REF"] == "refs/heads/main":
             cache_options += [
                 "--cache-to",
-                f"type=gha,mode=max,scope={container_tag}",
+                f"type=gha,mode=max,scope={cc}",
             ]
+        compiler_versions = cc
+    else:
+        compiler_versions = " ".join(CC_VERSIONS_BY_OS_VERSION[ubuntu_tag])
 
     session.run(
         "docker",
         "build",
         *cache_options,
         "--tag",
-        container_tag,
+        docker_container_tag(cc),
         "--build-arg",
-        f"UBUNTU_TAG={docker_container_os_version(cc)}",
+        f"UBUNTU_TAG={ubuntu_tag}",
         "--build-arg",
         f"USERID={os.geteuid()}",
         "--build-arg",
-        f"CC={cc}",
+        f"COMPILER_VERSIONS={compiler_versions}",
         "--file",
         "admin/Dockerfile.qa",
         ".",

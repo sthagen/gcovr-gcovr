@@ -5,19 +5,19 @@ FROM ubuntu:${UBUNTU_TAG:-ToBeDefined}
 ARG TARGETARCH
 ARG UBUNTU_TAG
 ARG USERID
-ARG CC
-ARG NOX_ENV_DIR=/gcovr/.nox-containerized/$CC.uid_$USERID
+ARG COMPILER_VERSIONS
 
 LABEL org.opencontainers.image.authors="GCOVR developers"
 LABEL org.opencontainers.image.title="Image used to test GCOVR in the CI and during development"
 
 LABEL org.opencontainers.image.source="https://github.com/gcovr/gcovr/blob/main/admin/Dockerfile.qa"
-LABEL org.opencontainers.image.version="$CC"
+LABEL org.opencontainers.image.version="$COMPILER_VERSIONS"
 
-COPY admin/docker_entrypoint.sh /usr/local/bin/docker_entrypoint.sh
-
+# -------------------------------------------------------------------------------------------------
+# Do compiler independent setup
+# -------------------------------------------------------------------------------------------------
 RUN <<EOS
-set -e
+set -ex
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update
@@ -37,14 +37,10 @@ apt-get install -y software-properties-common \
                    texlive-latex-recommended \
                    texlive-latex-extra
 
-# Install compiler
-apt-get install -y $CC \
-                   $(echo "$CC" | sed 's/gcc/g++/ ; s/clang/clang++/')
-
-
 # cspell:disable
 # Install python build dependencies
-apt-get install -y libssl-dev \
+apt-get install -y --no-install-recommends --no-install-suggests \
+                   libssl-dev \
                    zlib1g-dev \
                    libbz2-dev \
                    libreadline-dev \
@@ -59,26 +55,6 @@ apt-get install -y libssl-dev \
                    libffi-dev \
                    liblzma-dev
 # cspell:enable
-
-# Mark the compiler to not be removed
-apt-mark manual $CC $CXX
-
-apt-get autoremove -y
-apt-get clean -y
-rm -rf /var/lib/apt/lists/*
-
-# Install googletest
-git clone -q \
-    --branch=release-1.12.1 \
-    --depth=1 \
-    https://github.com/google/googletest.git /tmp/googletest
-cd /tmp/googletest
-mkdir build
-cd build
-CXX=$(echo "$CC" | sed 's/gcc/g++/ ; s/clang/clang++/') cmake .. || ( cat CMakeFiles/*.log && exit 1 )
-make
-make install
-rm -rf /tmp/googletest
 
 # Install bazel
 if [ "$TARGETARCH" = "arm64" ] ; then
@@ -96,16 +72,7 @@ addgroup docker
 id -un "$USERID" && userdel $(id -un "$USERID") || true
 useradd --create-home $(if [ -n "$USERID" ] ; then echo "-u $USERID" ; fi) -g docker -g sudo -s /bin/bash docker
 echo "docker:docker" | chpasswd
-
-# Make entrypoint executable
-chmod 0755 /usr/local/bin/docker_entrypoint.sh
 EOS
-
-ENV \
-  CC=$CC \
-  GCOVR_ISOLATED_TEST=zkQEVaBpXF1i \
-  NOX_ENV_DIR=$NOX_ENV_DIR \
-  XDG_CACHE_HOME=$NOX_ENV_DIR/.cache
 
 USER docker:docker
 
@@ -113,19 +80,75 @@ USER docker:docker
 # Unicode is necessary for some tools to work.
 ENV LC_ALL=C.UTF-8 LANG=C.UTF-8
 
-COPY pyproject.toml /tmp/pyproject.toml
-
 RUN <<EOS
 set -e
 
 curl -fsSL https://pyenv.run | bash
-/usr/local/bin/docker_entrypoint.sh pyenv install 3.9
-/usr/local/bin/docker_entrypoint.sh pyenv global 3.9
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
+pyenv install 3.9
+pyenv global 3.9
 
-/usr/local/bin/docker_entrypoint.sh python3 --version
-/usr/local/bin/docker_entrypoint.sh pip --version
-/usr/local/bin/docker_entrypoint.sh pip --no-cache-dir install nox pre-commit
+python3 --version
+pip --version
+pip --no-cache-dir install nox pre-commit
 EOS
+
+# -------------------------------------------------------------------------------------------------
+# Switch back to root and do the compiler specific stuff.
+# -------------------------------------------------------------------------------------------------
+USER root
+
+COPY admin/docker_entrypoint.sh /usr/local/bin/docker_entrypoint.sh
+
+RUN <<EOS
+set -ex
+export DEBIAN_FRONTEND=noninteractive
+
+# Install compiler
+# cspell:ignore libclang
+for cc in $COMPILER_VERSIONS ; do
+  if [ "$(echo "$cc" | sed 's/-.*//')" = "clang" ] ; then
+    cc_version="$(echo "$cc" | sed 's/clang-\(.*\)/\1/')"
+    apt-get install -y --no-install-recommends --no-install-suggests \
+                       $cc \
+                       clang++-$cc_version \
+                       llvm-$cc_version-dev \
+                       $(if [ $cc_version -ge 16 ] ; then echo "libclang-rt-$cc_version-dev" ; fi)
+  else
+    apt-get install -y --no-install-recommends --no-install-suggests \
+                      $cc \
+                      $(echo "$cc" | sed 's/gcc/g++/')
+  fi
+done
+
+apt-get autoremove -y
+apt-get clean -y
+rm -rf /var/lib/apt/lists/*
+
+# Install googletest
+git clone -q \
+    --branch=release-1.12.1 \
+    --depth=1 \
+    https://github.com/google/googletest.git /tmp/googletest
+cd /tmp/googletest
+mkdir build
+cd build
+CC=$(echo "$COMPILER_VERSIONS" | sed 's/ .*//') CXX=$(echo "$COMPILER_VERSIONS" | sed 's/ .*// ; s/gcc/g++/ ; s/clang/clang++/') cmake -DGTEST_CREATE_SHARED_LIBRARY=1 .. \
+  || ( cat CMakeFiles/*.log && exit 1 )
+make
+make install
+rm -rf /tmp/googletest
+
+# Make entrypoint executable
+chmod 0755 /usr/local/bin/docker_entrypoint.sh
+EOS
+
+ENV \
+  COMPILER_VERSIONS=$COMPILER_VERSIONS \
+  GCOVR_ISOLATED_TEST=zkQEVaBpXF1i
+
+USER docker:docker
 
 WORKDIR /gcovr
 

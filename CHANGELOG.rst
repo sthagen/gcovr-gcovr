@@ -21,6 +21,12 @@ Bug fixes and small improvements:
 - Add :option:`--json-trace-data-source` to include the trace data source in the JSON report
   independent from :option:`--verbose`. (:issue:`1178`)
 - Remove generated gcov files on error and catch additional gcov error message. (:issue:`1182`)
+- Change default HTML theme excluded line color. (:issue:`1179`)
+- Move theme colors to a separate CSS file so they can be overridden with a simple
+  `--html-template-directory` directory with only the style.colors.css file (:issue:`1179`)
+- Fix regular expression for detecting a version mismatch between ``gcc`` and ``gcov``. (:issue:`1187`)
+- Improve logging messages for GCOV execution errors to not print information twice and add trace
+  messages for gcov execution. (:issue:`1187`)
 
 Documentation:
 
@@ -42,6 +48,8 @@ Internal changes:
   from parsing of included gcov files. (:issue:`1175`)
 - Add ``gcc-7``, ``gcc-15``, ``clang-11``, ``clang-12`` and ``clang-20`` to the test suite. (:issue:`1177`)
 - Use pyenv to install python independent from OS version in docker image for testing. (:issue:`1181`)
+- Reorganize docker images. Create one image per OS which contains several compiler versions to
+  improve image build time and build cache size on local and CI systems. (:issue:`1184`, :issue:`1186`)
 
 .. _release_8_4:
 
@@ -54,6 +62,7 @@ Known bugs:
 - :ref:`fix_1171_1`
 - :ref:`fix_1171_2`
 - :ref:`fix_1176`
+- :ref:`fix_1187`
 
 Breaking changes:
 
