@@ -33,7 +33,7 @@ The behavior of this parser was informed by the following sources:
 
 import os
 from locale import getpreferredencoding
-from typing import Any, Optional
+from typing import Any, Iterator, Optional
 
 from gcovr.utils import get_md5_hexdigest, read_source_file
 
@@ -55,16 +55,14 @@ def parse_coverage(
     data_fname: str,
     gcov_json_data: dict[str, Any],
     *,
-    include_filter: list[Filter],
-    exclude_filter: list[Filter],
+    include_filter: tuple[Filter, ...],
+    exclude_filter: tuple[Filter, ...],
     ignore_parse_errors: Optional[set[str]],
     suspicious_hits_threshold: int = SUSPICIOUS_COUNTER,
     source_encoding: str = DEFAULT_SOURCE_ENCODING,
-    trace_file: bool = False,
-) -> list[tuple[FileCoverage, list[str]]]:
+    activate_trace_logging: bool = False,
+) -> Iterator[tuple[FileCoverage, list[str]]]:
     """Process a GCOV JSON output."""
-
-    files_coverage = list[tuple[FileCoverage, list[str]]]()
 
     # Check format version because the file can be created external
     if gcov_json_data["format_version"] != GCOV_JSON_VERSION:
@@ -74,38 +72,39 @@ def parse_coverage(
 
     for file in gcov_json_data["files"]:
         if not file["lines"] and not file["functions"]:
-            LOGGER.debug(
-                f"Skip data for file {file['file']} because no lines and functions defined."
-            )
+            if activate_trace_logging:
+                LOGGER.trace(
+                    "Skip data for file %s because no lines and functions defined.",
+                    file["file"],
+                )
             continue
 
         fname = os.path.normpath(
             os.path.join(gcov_json_data["current_working_directory"], file["file"])
         )
 
-        if is_file_excluded(fname, include_filter, exclude_filter):
+        if is_file_excluded("source file", fname, include_filter, exclude_filter):
             continue
 
-        LOGGER.debug(f"Parsing coverage data for file {fname}")
+        LOGGER.debug("Parsing coverage data for file %s", fname)
 
         max_line_number = (
             max(line["line_number"] for line in file["lines"]) if file["lines"] else 1
         )
         encoded_source_lines = read_source_file(source_encoding, fname, max_line_number)
 
-        filecov = _parse_file_node(
-            data_fname,
-            gcov_file_node=file,
-            filename=fname,
-            source_lines=encoded_source_lines,
-            ignore_parse_errors=ignore_parse_errors,
-            suspicious_hits_threshold=suspicious_hits_threshold,
-            trace_file=trace_file,
+        yield (
+            _parse_file_node(
+                data_fname,
+                gcov_file_node=file,
+                filename=fname,
+                source_lines=encoded_source_lines,
+                ignore_parse_errors=ignore_parse_errors,
+                suspicious_hits_threshold=suspicious_hits_threshold,
+                activate_trace_logging=activate_trace_logging,
+            ),
+            encoded_source_lines,
         )
-
-        files_coverage.append((filecov, encoded_source_lines))
-
-    return files_coverage
 
 
 def _parse_file_node(
@@ -116,7 +115,7 @@ def _parse_file_node(
     source_lines: list[str],
     ignore_parse_errors: Optional[set[str]],
     suspicious_hits_threshold: int = SUSPICIOUS_COUNTER,
-    trace_file: bool = False,
+    activate_trace_logging: bool = False,
 ) -> FileCoverage:
     """
     Extract coverage data from a json gcov report.
@@ -146,9 +145,11 @@ def _parse_file_node(
     filecov = FileCoverage(data_fname, filename=filename)
     for line in gcov_file_node["lines"]:
         persistent_states.update(location=(filename, line["line_number"]))
-        if trace_file:
+        if activate_trace_logging:
             LOGGER.trace(
-                f"Reading {':'.join(str(e) for e in persistent_states['location'])} of function {line.get('function_name')}"
+                "Reading %s of function %s",
+                ":".join(str(e) for e in persistent_states["location"]),
+                line.get("function_name"),
             )
         linecov = filecov.insert_line_coverage(
             str(data_fname),
@@ -233,7 +234,8 @@ def _parse_file_node(
         and persistent_states["negative_hits.warn_once_per_file"] > 1
     ):
         LOGGER.warning(
-            f"Ignored {persistent_states['negative_hits.warn_once_per_file']} negative hits overall."
+            "Ignored %d negative hits overall.",
+            persistent_states["negative_hits.warn_once_per_file"],
         )
 
     if (
@@ -241,7 +243,8 @@ def _parse_file_node(
         and persistent_states["suspicious_hits.warn_once_per_file"] > 1
     ):
         LOGGER.warning(
-            f"Ignored {persistent_states['suspicious_hits.warn_once_per_file']} suspicious hits overall."
+            "Ignored %d suspicious hits overall.",
+            persistent_states["suspicious_hits.warn_once_per_file"],
         )
 
     return filecov

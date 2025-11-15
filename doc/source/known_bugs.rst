@@ -9,6 +9,76 @@ Known bugs
 This list contains bugs for version 6.0 and newer, always check the latest
 version of this file available `here <https://gcovr.com/en/latest/known_bugs.html>`_.
 
+.. _fix_1194_1:
+
+Drastic increase of runtime with large projects
+-----------------------------------------------
+
+.. list-table::
+
+   * - Introduced
+     - :ref:`release_8_4`
+
+   * - Fixed
+     - :ref:`next_release`, :issue:`1194`
+
+The runtime of ``gcovr`` increased drastically if a project had source files with many lines and functions.
+
+- In :issue:`1193` the runtime increased from 1,3s to 350s for a file with data for
+  ~5.000 functions, ~75.000 lines of code with ~95.000 branches and ~60.000 calls.
+- In :issue:`1164` the runtime increased from ~43s to ~150s for the provided data.
+
+.. _fix_1194_2:
+
+Data source in JSON report can contain wrong information
+--------------------------------------------------------
+
+.. list-table::
+
+   * - Introduced
+     - :ref:`release_8_4`
+
+   * - Fixed
+     - :ref:`next_release`, :issue:`1194`
+
+The set used to store the data source is shared for all items of the
+input file. Merging data from another source e.g. for a line is adding
+the data source to all other locations.
+
+.. _fix_1192:
+
+`TypeError` in text report for covered decisions
+------------------------------------------------
+
+.. list-table::
+
+   * - Introduced
+     - :ref:`release_8_4`
+
+   * - Fixed
+     - :ref:`next_release`, :issue:`1192`
+
+If text report for covered decisions is created with :option:`--txt-report-covered` and
+:option:`--txt-metric=decision` following error occurs:
+
+.. code-block::
+
+  (ERROR) Error occurred while printing reports:
+  Traceback (most recent call last):
+    File "/gcovr/src/gcovr/__main__.py", line 426, in main
+      gcovr_formats.write_reports(covdata, options)
+    File "/gcovr/src/gcovr/formats/__init__.py", line 311, in write_reports
+      format_writer(covdata, output.abspath)
+    File "/gcovr/src/gcovr/formats/txt/__init__.py", line 105, in write_report
+      write_report(covdata, output_file, self.options)
+    File "/gcovr/src/gcovr/formats/txt/write.py", line 82, in write_report
+      (stat, txt) = _summarize_file_coverage(covdata[key], options)
+    File "/gcovr/src/gcovr/formats/txt/write.py", line 130, in _summarize_file_coverage
+      covered_lines = _covered_decisions_str(filecov)
+    File "/gcovr/src/gcovr/formats/txt/write.py", line 223, in _covered_decisions_str
+      covered_decisions = sorted(
+  TypeError: 'method' object is not iterable
+
 .. _fix_1189:
 
 Line coverage missing if template functions are used

@@ -36,6 +36,10 @@ Bug fixes and small improvements:
 - Improve logging messages for GCOV execution errors to not print information twice and add trace
   messages for gcov execution. (:issue:`1187`)
 - Fix handling of lines after function specialization. (:issue:`1189`)
+- Improve performance by changing logging messages (level and lazy interpolation). (:issue:`1191`)
+- Fix text report for covered decisions. (:issue:`1192`)
+- Fix runtime problem introduced with 8.4. (:issue:`1194`)
+- Fix wrong entries in data source attribute of JSON report. (:issue:`1194`)
 
 Documentation:
 
@@ -73,6 +77,9 @@ Known bugs:
 - :ref:`fix_1176`
 - :ref:`fix_1187`
 - :ref:`fix_1189`
+- :ref:`fix_1192`
+- :ref:`fix_1194_1`
+- :ref:`fix_1194_2`
 
 Breaking changes:
 

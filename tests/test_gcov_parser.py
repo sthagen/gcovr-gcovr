@@ -560,15 +560,15 @@ def test_branch_exclusion(flags: str) -> None:
     )
 
     expected_covered_branches = {
-        (1, None, None),
-        (2, None, None),
-        (3, None, None),
-        (4, None, None),
+        (1, -1, -1),
+        (2, -1, -1),
+        (3, -1, -1),
+        (4, -1, -1),
     }
     if "exclude_throw_branches" in flags:
-        expected_covered_branches -= {(3, None, None), (4, None, None)}
+        expected_covered_branches -= {(3, -1, -1), (4, -1, -1)}
     if "exclude_unreachable_branches" in flags:
-        expected_covered_branches -= {(2, None, None), (4, None, None)}
+        expected_covered_branches -= {(2, -1, -1), (4, -1, -1)}
 
     filecov, lines = text.parse_coverage(
         "",
@@ -662,12 +662,14 @@ def test_negative_branch_count_json() -> None:
     }
 
     with pytest.raises(NegativeHits):
-        json.parse_coverage(
-            "example.gcov.json.gz",
-            gcov_json_data=source,
-            include_filter=[AlwaysMatchFilter()],
-            exclude_filter=[],
-            ignore_parse_errors=set(),
+        list(
+            json.parse_coverage(
+                "example.gcov.json.gz",
+                gcov_json_data=source,
+                include_filter=tuple([AlwaysMatchFilter()]),
+                exclude_filter=tuple(),
+                ignore_parse_errors=set(),
+            )
         )
 
 
@@ -758,12 +760,14 @@ def test_negative_branch_count_ignored_json(
         ],
     }
 
-    json.parse_coverage(
-        gcov_json_data=source,
-        data_fname="example.gcov.json.gz",
-        include_filter=[AlwaysMatchFilter()],
-        exclude_filter=[],
-        ignore_parse_errors=set([flag]),
+    list(
+        json.parse_coverage(
+            gcov_json_data=source,
+            data_fname="example.gcov.json.gz",
+            include_filter=tuple([AlwaysMatchFilter()]),
+            exclude_filter=tuple(),
+            ignore_parse_errors=set([flag]),
+        )
     )
 
     number_of_warnings = 2 if flag == "negative_hits.warn" else 1
@@ -876,7 +880,7 @@ def test_negative_branch_count_ignored() -> None:
         if branchcov.is_covered
     }
 
-    assert covered_branches == {(1, None, None), (3, None, None)}
+    assert covered_branches == {(1, -1, -1), (3, -1, -1)}
 
 
 def test_suspicious_branch_count() -> None:
@@ -994,7 +998,7 @@ def test_suspicious_branch_count_ignored() -> None:
         if branchcov.is_covered
     }
 
-    assert covered_branches == {(1, None, None), (3, None, None)}
+    assert covered_branches == {(1, -1, -1), (3, -1, -1)}
 
 
 @pytest.mark.parametrize("flags", ["none", "exclude_internal_functions"])
