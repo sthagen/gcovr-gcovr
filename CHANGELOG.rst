@@ -48,6 +48,7 @@ Bug fixes and small improvements:
 - Extend support for zipped reports. If last suffix is ``.xz`` then LZMA is used to compress the report. (:issue:`1201`)
 - Fix function exclusion in report generation. (:issue:`1206`)
 - Do not ignore lines without functions, e.g. from inlined code. (:issue:`1204`)
+- Ignore all whitespaces instead of only spaces for detection of noncode lines. (:issue:`1210`)
 
 Documentation:
 
@@ -72,6 +73,7 @@ Internal changes:
 - Reorganize docker images. Create one image per OS which contains several compiler versions to
   improve image build time and build cache size on local and CI systems. (:issue:`1184`, :issue:`1186`)
 - Do not run ``mypy`` on ``PyPy`` implementation of python. (:issue:`1209`)
+- Add test with ``ccache``. (:issue:`1211`)
 
 .. _release_8_4:
 
