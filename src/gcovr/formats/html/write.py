@@ -87,17 +87,24 @@ def get_theme_color(html_theme: str) -> str:
 def templates(options: Options) -> Environment:
     """Get the Jinja2 environment for the templates."""
     # As default use the package loader
-    loader: BaseLoader = PackageLoader(
-        "gcovr.formats.html",
-        package_path=get_theme_name(options.html_theme),
-    )
-
+    loaders: list[BaseLoader] = []
     # If a directory is given files in the directory have higher precedence.
     if options.html_template_dir is not None:
-        loader = ChoiceLoader([FileSystemLoader(options.html_template_dir), loader])
+        loaders.append(FileSystemLoader(options.html_template_dir))
+
+    loaders += [
+        PackageLoader(
+            "gcovr.formats.html",
+            package_path=get_theme_name(options.html_theme),
+        ),
+        PackageLoader(
+            "gcovr.formats.html",
+            package_path="common",
+        ),
+    ]
 
     return Environment(
-        loader=loader,
+        loader=ChoiceLoader(loaders),
         autoescape=True,
         trim_blocks=True,
         lstrip_blocks=True,
@@ -707,6 +714,7 @@ def get_coverage_data(
     cdata: Union[CoverageContainerDirectory, FileCoverage],
     link_report: str,
     cdata_fname: str,
+    relative_path: str = "",
 ) -> dict[str, Any]:
     """Get the coverage data"""
 
@@ -782,7 +790,12 @@ def get_coverage_data(
     }
     display_filename = force_unix_separator(
         os.path.relpath(
-            os.path.realpath(cdata_fname), os.path.realpath(root_info.directory)
+            os.path.realpath(cdata_fname),
+            os.path.realpath(
+                os.path.join(root_info.directory, relative_path)
+                if relative_path
+                else root_info.directory
+            ),
         )
     )
 
@@ -815,8 +828,6 @@ def get_directory_data(
         relative_path = ""
     elif relative_path.startswith(root_info.directory):
         relative_path = relative_path[len(root_info.directory) :]
-    if len(relative_path) and relative_path[-1] == "/":
-        relative_path = relative_path[:-1]
     directory_data = dict[str, Any](
         {
             "dirname": (
@@ -844,6 +855,7 @@ def get_directory_data(
                 covdata_dir[key],
                 cdata_sourcefile[fname],
                 cdata_fname[fname],
+                relative_path,
             )
         )
 

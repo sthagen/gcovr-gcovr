@@ -11,6 +11,13 @@ Next Release
 Breaking changes:
 
 - The option :option:`--lcov-test-name` doesn't accept values with spaces anymore. (:issue:`1196`)
+- Change HTML templates (:issue:`1216`, :issue:`1217`):
+
+  - The file overview table in the default theme now uses a grid layout.
+  - The function lists table in both themes are changed to a grid layout.
+  - Add a common template folder where the common templates for the themes are stored.
+    It contains the function content and source page navigation templates.
+  - Restructure the the summary and move some data to the footer.
 
 New features and notable changes:
 
@@ -33,7 +40,7 @@ Bug fixes and small improvements:
 - Remove generated gcov files on error and catch additional gcov error message. (:issue:`1182`)
 - Change default HTML theme excluded line color. (:issue:`1179`)
 - Move theme colors to a separate CSS file so they can be overridden with a simple
-  `--html-template-directory` directory with only the style.colors.css file (:issue:`1179`)
+  :option:`--html-template-dir` directory with only the style.colors.css file (:issue:`1179`)
 - Fix regular expression for detecting a version mismatch between ``gcc`` and ``gcov``. (:issue:`1187`)
 - Improve logging messages for GCOV execution errors to not print information twice and add trace
   messages for gcov execution. (:issue:`1187`)
@@ -49,6 +56,9 @@ Bug fixes and small improvements:
 - Fix function exclusion in report generation. (:issue:`1206`)
 - Do not ignore lines without functions, e.g. from inlined code. (:issue:`1204`)
 - Ignore all whitespaces instead of only spaces for detection of noncode lines. (:issue:`1210`)
+- Add support for temporary merging line coverage objects without modifying the data model. (:issue:`1213`)
+- Change internal behavior of :option:`--exclude-function-lines` to exclude the line of function definition
+  instead of removing it completely. (:issue:`1214`)
 
 Documentation:
 
