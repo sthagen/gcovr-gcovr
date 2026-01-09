@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -17,7 +17,7 @@
 #
 # ****************************************************************************
 
-from typing import Any, Optional
+from typing import Any
 
 from jinja2 import (
     Environment,
@@ -90,7 +90,7 @@ def write_summary_report(
 
 
 def _coverage_to_badge(
-    coverage: Optional[float],
+    coverage: float | None,
     medium_threshold: float,
     high_threshold: float,
     theme: str,

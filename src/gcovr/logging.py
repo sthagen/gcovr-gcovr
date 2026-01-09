@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -20,7 +20,7 @@
 import logging
 import os
 import sys
-from typing import Any, Optional, cast, TYPE_CHECKING
+from typing import Any, cast, TYPE_CHECKING
 from colorlog import ColoredFormatter
 
 if TYPE_CHECKING:
@@ -53,7 +53,7 @@ logging.setLoggerClass(GcovrLogger)
 LOGGER = cast("GcovrLogger", logging.getLogger("gcovr"))
 
 
-def __colored_formatter(options: "Optional[Options]" = None) -> ColoredFormatter:
+def __colored_formatter(options: "Options | None" = None) -> ColoredFormatter:
     """Configure the colored logging formatter."""
     if options is not None:
         log_format = (

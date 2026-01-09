@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -17,7 +17,7 @@
 #
 # ****************************************************************************
 
-from typing import Callable, Optional
+from typing import Callable
 
 from ..data_model.coverage import FileCoverage
 from ..data_model.container import CoverageContainer
@@ -138,7 +138,7 @@ def write_reports(covdata: CoverageContainer, options: Options) -> None:
     """Write the reports to the given locations."""
     generators: list[
         tuple[
-            list[Optional[OutputOrDefault]],
+            list[OutputOrDefault | None],
             Callable[[CoverageContainer, str], None],
             Callable[[], None],
         ]

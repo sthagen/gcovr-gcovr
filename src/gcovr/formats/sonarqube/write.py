@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -17,7 +17,6 @@
 #
 # ****************************************************************************
 
-from typing import Optional, Union
 from lxml import etree  # nosec # We only write XML files
 
 from ...data_model.container import CoverageContainer
@@ -53,7 +52,7 @@ def write_report(
                 line_node.set("covered", "true" if linecov.is_covered else "false")
 
                 if options.sonarqube_metric != "line":
-                    stat: Optional[Union[CoverageStat, DecisionCoverageStat]] = None
+                    stat: CoverageStat | DecisionCoverageStat | None = None
                     if (
                         options.sonarqube_metric == "branch"
                         and linecov.has_reportable_branches

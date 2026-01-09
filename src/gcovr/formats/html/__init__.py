@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -16,8 +16,6 @@
 # For more information, see the README.rst file.
 #
 # ****************************************************************************
-
-from typing import Union
 
 from ...data_model.container import CoverageContainer
 from ...formats.base import BaseHandler
@@ -42,7 +40,7 @@ class HtmlHandler(BaseHandler):
     """Class to handle HTML format."""
 
     @classmethod
-    def get_options(cls) -> list[Union[GcovrConfigOption, str]]:
+    def get_options(cls) -> list[GcovrConfigOption | str]:
         return [
             # Global options needed for report
             "show_calls",
@@ -98,6 +96,41 @@ class HtmlHandler(BaseHandler):
                 type=OutputOrDefault,
                 default=None,
                 const=OutputOrDefault(None),
+            ),
+            GcovrConfigOption(
+                "html_single_page",
+                ["--html-single-page"],
+                group="output_options",
+                help=(
+                    "Use one single html output file containing all data in the "
+                    "specified mode. If mode is 'js-enabled' (default) and javascript "
+                    "is possible the page is interactive like the normal report. "
+                    "If mode is 'static' all files are shown at once."
+                ),
+                action="store_true",
+            ),
+            GcovrConfigOption(
+                "html_static_report",
+                ["--html-static-report"],
+                group="output_options",
+                help="Create a static report without javascript.",
+                action="store_true",
+            ),
+            GcovrConfigOption(
+                "html_self_contained",
+                ["--html-self-contained"],
+                group="output_options",
+                help=(
+                    "Control whether the HTML report bundles resources like CSS styles. "
+                    "Self-contained reports can be sent via email, "
+                    "but conflict with the Content Security Policy of some web servers. "
+                    "Defaults to self-contained reports unless --html-details or "
+                    "--html-nested is used without --html-single-page."
+                ),
+                action="store_const",
+                default=None,
+                const=True,
+                const_negate=False,
             ),
             GcovrConfigOption(
                 "html_block_ids",
@@ -185,37 +218,6 @@ class HtmlHandler(BaseHandler):
                     "See also --source-encoding."
                 ),
                 default="UTF-8",
-            ),
-            GcovrConfigOption(
-                "html_self_contained",
-                ["--html-self-contained"],
-                group="output_options",
-                help=(
-                    "Control whether the HTML report bundles resources like CSS styles. "
-                    "Self-contained reports can be sent via email, "
-                    "but conflict with the Content Security Policy of some web servers. "
-                    "Defaults to self-contained reports unless --html-details or "
-                    "--html-nested is used without --html-single-page."
-                ),
-                action="store_const",
-                default=None,
-                const=True,
-                const_negate=False,
-            ),
-            GcovrConfigOption(
-                "html_single_page",
-                ["--html-single-page"],
-                group="output_options",
-                choices=("static", "js-enabled"),
-                nargs="?",
-                const="js-enabled",
-                default=None,
-                help=(
-                    "Use one single html output file containing all data in the "
-                    "specified mode. If mode is 'js-enabled' (default) and javascript "
-                    "is possible the page is interactive like the normal report. "
-                    "If mode is 'static' all files are shown at once."
-                ),
             ),
         ]
 

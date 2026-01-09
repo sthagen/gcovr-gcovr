@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -17,8 +17,6 @@
 #
 # ****************************************************************************
 
-from typing import Union
-
 from ..data_model.container import CoverageContainer
 from ..options import GcovrConfigOption, Options
 
@@ -27,7 +25,7 @@ class BaseHandler:
     """Base class for a format handler."""
 
     @classmethod
-    def get_options(cls) -> list[Union[GcovrConfigOption, str]]:
+    def get_options(cls) -> list[GcovrConfigOption | str]:
         """Get the options of the format handler"""
         raise AssertionError("Function 'get_options' not implemented.")
 

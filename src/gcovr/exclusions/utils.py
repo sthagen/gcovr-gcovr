@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -19,7 +19,7 @@
 
 """Utils for exclusion of lines and branches"""
 
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable
 
 from ..data_model.coverage import FileCoverage, FunctionCoverage
 from ..logging import LOGGER
@@ -30,9 +30,9 @@ FunctionListByLine = dict[int, list[FunctionCoverage]]
 
 
 def function_exclude_not_supported(
-    filename: Optional[str] = None,
-    lineno: Optional[int] = None,
-    columnno: Optional[int] = None,
+    filename: str | None = None,
+    lineno: int | None = None,
+    columnno: int | None = None,
 ) -> None:
     """warn that a function exclude isn't supported"""
     if filename is None:

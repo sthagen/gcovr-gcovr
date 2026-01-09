@@ -372,7 +372,7 @@ with the differences as an artifact.
     # run tests and generate a ZIP archive when there were differences
     python3 -m nox --session tests -- --archive-differences
 
-.. versionchanged:: NEXT
+.. versionchanged:: 8.5
    Replaced ``_`` with ``-`` in the options controlling the test suite:
 
    - ``--generate_reference`` is now ``--generate-reference``
@@ -445,6 +445,12 @@ or only for the tests containing ``simple`` in the name:
 .. code:: bash
 
     python3 -m nox -s 'docker_compiler(all)' -- -rs tests -- --update-reference -k 'simple'
+
+or only for the tests for ``html`` format:
+
+.. code:: bash
+
+    python3 -m nox -s 'docker_compiler(all)' -- -rs tests -- --update-reference -m 'html'
 
 .. _devcontainer:
 

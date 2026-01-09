@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -23,7 +23,7 @@ from threading import Thread, Condition, RLock
 from traceback import format_exception
 from contextlib import contextmanager
 from queue import Queue, Empty
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Iterator
 
 from ...exceptions import SanityCheckError
 from ...logging import LOGGER
@@ -73,7 +73,7 @@ def locked_directory(directory: str) -> Iterator[None]:
         locked_directory_global_object.done(directory)
 
 
-QueueContent = Optional[tuple[Callable[[str], None], tuple[Any], dict[str, Any]]]
+QueueContent = tuple[Callable[[str], None], tuple[Any], dict[str, Any]] | None
 
 
 def worker(

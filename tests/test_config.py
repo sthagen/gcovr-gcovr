@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -23,7 +23,7 @@
 import io
 import re
 import textwrap
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Iterable
 
 import pytest
 
@@ -160,7 +160,7 @@ def test_unknown_keys() -> None:
     ids=lambda test_spec: test_spec[0],
 )
 def test_option_with_boolean_values(
-    test_spec: tuple[str, str, str, Union[bool, int], Union[bool, int], bool],
+    test_spec: tuple[str, str, str, bool | int, bool | int, bool],
 ) -> None:
     r"""
     Boolean values need special consideration.
@@ -329,7 +329,7 @@ class Ref:
     This is useful to represent the presence of a value that may be None.
     """
 
-    def __init__(self, value: Union[Optional[str], list[str]]) -> None:
+    def __init__(self, value: str | list[str] | None) -> None:
         self.value = value
 
 
@@ -345,7 +345,7 @@ class Ref:
     ids=lambda test_spec: test_spec[0],
 )
 def test_namespace_merging_overwriting(
-    test_spec: tuple[str, list[Any], Optional[str]],
+    test_spec: tuple[str, list[Any], str | None],
 ) -> None:
     _, input_values, result = test_spec
 
@@ -380,7 +380,7 @@ def test_namespace_merging_overwriting(
     ids=lambda test_spec: test_spec[0],
 )
 def test_namespace_merging_appending(
-    test_spec: tuple[str, list[Any], Optional[list[str]]],
+    test_spec: tuple[str, list[Any], list[str] | None],
 ) -> None:
     _, input_values, result = test_spec
 

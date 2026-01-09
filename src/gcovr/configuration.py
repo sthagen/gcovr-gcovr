@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -23,7 +23,7 @@ from __future__ import annotations
 from argparse import _ArgumentGroup, ArgumentParser, ArgumentTypeError, SUPPRESS
 from inspect import isclass
 from locale import getpreferredencoding
-from typing import Iterable, Any, Optional, Callable, TextIO
+from typing import Iterable, Any, Callable, TextIO
 from dataclasses import dataclass
 import datetime
 import os
@@ -57,7 +57,7 @@ def timestamp(value: str) -> datetime.datetime:
         raise ArgumentTypeError(f"{ex}: {value!r}") from None
 
 
-def source_date_epoch() -> Optional[datetime.datetime]:
+def source_date_epoch() -> datetime.datetime | None:
     """Load time from SOURCE_DATE_EPOCH, if it exists.
     See: <https://reproducible-builds.org/docs/source-date-epoch/>
 
@@ -158,7 +158,7 @@ def argument_parser_setup(
 
 def parse_config_into_dict(
     config_entry_source: Iterable[ConfigEntry],
-    all_options: Optional[Iterable[GcovrConfigOption]] = None,
+    all_options: Iterable[GcovrConfigOption] | None = None,
 ) -> dict[str, Any]:
     """Parse a config file and save the configuration in a dictionary."""
     cfg_dict = dict[str, Any]()
@@ -189,7 +189,7 @@ def _get_value_from_config_entry(
     cfg_entry: ConfigEntry,
     option: GcovrConfigOption,
 ) -> Any:
-    def get_boolean(silent_error: bool = False) -> Optional[bool]:
+    def get_boolean(silent_error: bool = False) -> bool | None:
         try:
             return cfg_entry.value_as_bool
         except ValueError:
@@ -285,7 +285,7 @@ def _assign_value_to_dict(
     value: Any,
     option: GcovrConfigOption,
     is_single_value: bool,
-    cfg_entry_key: Optional[str] = None,
+    cfg_entry_key: str | None = None,
 ) -> None:
     if option.action == "append" or option.nargs == "*":
         append_target = namespace.setdefault(option.name, [])
@@ -314,7 +314,7 @@ def _assign_value_to_dict(
 
 def merge_options_and_set_defaults(
     partial_namespaces: list[dict[str, Any]],
-    all_options: Optional[list[GcovrConfigOption]] = None,
+    all_options: list[GcovrConfigOption] | None = None,
 ) -> Options:
     """Merge all options into the namespace and set the default values for unused options."""
     if not partial_namespaces:
@@ -842,50 +842,10 @@ GCOVR_CONFIG_OPTIONS = [
         action="store_true",
     ),
     GcovrConfigOption(
-        "exclude_internal_functions",
-        ["--include-internal-functions"],
-        group="gcov_options",
-        help=(
-            "Include function coverage of compiler internal functions "
-            "(starting with '__' or '_GLOBAL__sub_I_')."
-        ),
-        action="store_false",
-    ),
-    GcovrConfigOption(
-        "exclude_unreachable_branches",
-        ["--exclude-unreachable-branches"],
-        group="gcov_options",
-        help=(
-            "Exclude branch coverage from lines without useful source code "
-            "(often, compiler-generated 'dead' code)."
-        ),
-        action="store_true",
-    ),
-    GcovrConfigOption(
         "exclude_function_lines",
         ["--exclude-function-lines"],
         group="gcov_options",
         help="Exclude coverage from lines defining a function.",
-        action="store_true",
-    ),
-    GcovrConfigOption(
-        "exclude_noncode_lines",
-        ["--exclude-noncode-lines"],
-        config="exclude-noncode-lines",
-        group="gcov_options",
-        help="Exclude coverage from lines which seem to be non-code.",
-        action="store_true",
-        const_negate=False,
-    ),
-    GcovrConfigOption(
-        "exclude_throw_branches",
-        ["--exclude-throw-branches"],
-        group="gcov_options",
-        help=(
-            "For branch coverage, exclude branches "
-            "that the compiler generates for exception handling. "
-            "This often leads to more 'sensible' coverage reports."
-        ),
         action="store_true",
     ),
     GcovrConfigOption(
@@ -931,6 +891,46 @@ GCOVR_CONFIG_OPTIONS = [
         "warn_excluded_lines_with_hits",
         ["--warn-excluded-lines-with-hits"],
         help="Print a warning if a line excluded by comments has a hit counter != 0.",
+        action="store_true",
+    ),
+    GcovrConfigOption(
+        "exclude_internal_functions",
+        ["--include-internal-functions"],
+        group="gcov_options",
+        help=(
+            "Include function coverage of compiler internal functions "
+            "(starting with '__' or '_GLOBAL__sub_I_')."
+        ),
+        action="store_false",
+    ),
+    GcovrConfigOption(
+        "exclude_unreachable_branches",
+        ["--exclude-unreachable-branches"],
+        group="gcov_options",
+        help=(
+            "Remove branch coverage from lines without useful source code "
+            "(often, compiler-generated 'dead' code)."
+        ),
+        action="store_true",
+    ),
+    GcovrConfigOption(
+        "exclude_noncode_lines",
+        ["--exclude-noncode-lines"],
+        config="exclude-noncode-lines",
+        group="gcov_options",
+        help="Remove coverage from lines which seem to be non-code.",
+        action="store_true",
+        const_negate=False,
+    ),
+    GcovrConfigOption(
+        "exclude_throw_branches",
+        ["--exclude-throw-branches"],
+        group="gcov_options",
+        help=(
+            "For branch coverage, remove branches "
+            "that the compiler generates for exception handling. "
+            "This often leads to more 'sensible' coverage reports."
+        ),
         action="store_true",
     ),
     GcovrConfigOption(
@@ -1072,10 +1072,10 @@ class ConfigEntry:
     value: str
     """The un-parsed value."""
 
-    filename: Optional[str] = None
+    filename: str | None = None
     """Path of the config file, for error messages."""
 
-    lineno: Optional[int] = None
+    lineno: int | None = None
     """Line of the entry in the config file, for error messages."""
 
     def __str__(self) -> str:

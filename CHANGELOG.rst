@@ -10,7 +10,27 @@ Next Release
 
 Breaking changes:
 
+- Drop support for Python 3.9. (:issue:`1227`)
+
+New features and notable changes:
+
+- Add support for Python 3.14. (:issue:`1227`)
+
+Bug fixes and small improvements:
+
+Documentation:
+
+Internal changes:
+
+.. _release_8_5:
+
+8.5 (08 January 2026)
+---------------------
+
+Breaking changes:
+
 - The option :option:`--lcov-test-name` doesn't accept values with spaces anymore. (:issue:`1196`)
+- The option :option:`--lcov-format-1.x <--lcov-format-1>` is deprecated and mapped to :option:`--lcov-format-version=1.x`. (:issue:`1212`)
 - Changes to HTML templates:
 
   - The file overview table in the default theme now uses a grid layout. (:issue:`1216`)
@@ -22,6 +42,8 @@ Breaking changes:
   - Add common stylesheet for all themes. (:issue:`1220`)
   - Add navigation links to source details. (:issue:`1220`)
   - Add buttons to toggle line background color in source details view. (:issue:`1221`)
+  - Add a document overview with all active lines in source details view. (:issue:`1222`)
+  - Added :option:`--html-static-report` and remove argument from :option:`--html-single-page`. (:issue:`1224`)
 
 New features and notable changes:
 
@@ -63,8 +85,7 @@ Bug fixes and small improvements:
 - Add support for temporary merging line coverage objects without modifying the data model. (:issue:`1213`)
 - Change internal behavior of :option:`--exclude-function-lines` to exclude the line of function definition
   instead of removing it completely. (:issue:`1214`)
-
-Documentation:
+- Ensure that all functions have a line coverage element in LCOV report. (:issue:`1212`)
 
 Internal changes:
 
@@ -77,7 +98,8 @@ Internal changes:
     - ``--archive_differences`` is now ``--archive-differences``
     - ``--skip_clean`` is now ``--skip-clean``
 
-  - Remove test with MacOs 13 because image will be retired by December 4th, 2025.
+  - Remove test with MacOs 13 because image was retired.
+  - Add markers to tests for the different report formats. (:issue:`1223`)
 
 - Activate parallel test execution by default and improve IDE support. (:issue:`1174`)
 - Add :option:`--trace-include` and :option:`--trace-exclude` to get additional output

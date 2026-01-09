@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -30,7 +30,7 @@ import shlex
 import shutil
 import subprocess  # nosec: B404
 from sys import stderr, stdout
-from typing import Callable, Generator, List, NoReturn, Optional, Union
+from typing import Callable, Generator, List, NoReturn
 from unittest import mock
 import zipfile
 
@@ -239,7 +239,7 @@ def log_command(
 
 @contextmanager
 def create_output(
-    test_id: Optional[str],
+    test_id: str | None,
     request: pytest.FixtureRequest,
 ) -> Generator[Path, None, None]:
     """Context manager for creating a output directory."""
@@ -286,7 +286,7 @@ class GcovrTestCompare:
         self,
         *,
         output_dir: Path,
-        test_id: Optional[str],
+        test_id: str | None,
         capsys: pytest.CaptureFixture[str],
         generate_reference: bool,
         update_reference: bool,
@@ -492,7 +492,7 @@ class GcovrTestCompare:
                 check_output.append("".join(diff_lines))
 
         if extension == ".xml":
-            schema: Optional[Path] = None
+            schema: Path | None = None
             if "cobertura" in reference_file.name:
                 schema = _BASE_DIRECTORY / "cobertura.coverage-04.dtd"
             elif "jacoco" in reference_file.name:
@@ -505,7 +505,7 @@ class GcovrTestCompare:
             if schema is not None:
                 if schema.suffix == ".dtd":
 
-                    def run_xmllint() -> Optional[str]:
+                    def run_xmllint() -> str | None:
                         dtd_schema = etree.DTD(str(schema))  # nosec # We parse our trusted XSD files here
                         doc = etree.parse(str(test_file))  # nosec # We parse our test files here
                         return (
@@ -516,7 +516,7 @@ class GcovrTestCompare:
 
                 else:
 
-                    def run_xmllint() -> Optional[str]:
+                    def run_xmllint() -> str | None:
                         xmlschema_doc = etree.parse(str(schema))  # nosec # We parse our trusted XSD files here
                         xmlschema = etree.XMLSchema(xmlschema_doc)
                         doc = etree.parse(str(test_file))  # nosec # We parse our test files here
@@ -536,7 +536,7 @@ class GcovrTestCompare:
         self,
         *,
         output_pattern: list[str],
-        scrub: Optional[Callable[[str], str]] = None,
+        scrub: Callable[[str], str] | None = None,
         translate_new_line: bool = True,
         encoding: str = "utf-8",
     ) -> None:
@@ -602,7 +602,7 @@ class GcovrTestCompare:
             raise AssertionError(f"Differences found:\n{''.join(all_compare_errors)}")
 
     def raise_not_compared_reference_files(self) -> None:
-        """Must be called at the end of the test to get the diff output."""
+        """Must be called at the end of the test to get the missing compare calls."""
 
         not_compared_files = len(self.reference_files) == 0
         message = f"Not compared files found, update the test: {', '.join(str(p) for p in self.reference_files)}"
@@ -618,10 +618,11 @@ class GcovrTestExec:
         self,
         *,
         output_dir: Path,
-        test_name: Optional[str],
+        test_name: str | None,
         test_id: str,
         capsys: pytest.CaptureFixture[str],
         check,
+        markers: list[pytest.Mark],
         compare: GcovrTestCompare,
     ):
         """Init the builder."""
@@ -630,6 +631,7 @@ class GcovrTestExec:
         self.test_id = test_id
         self.capsys = capsys
         self.check = check
+        self.markers = markers
         self._compare = compare
         self.use_llvm_profdata = False
 
@@ -683,7 +685,7 @@ class GcovrTestExec:
         """Get the gcov command to use."""
         return [str(e) for e in GCOV]
 
-    def copy_source(self, source: Optional[Path] = None) -> None:
+    def copy_source(self, source: Path | None = None) -> None:
         """Copy the test data to the output."""
         if source is None:
             source = Path.cwd() / "source"
@@ -718,7 +720,7 @@ class GcovrTestExec:
         self._compare.reference_files.clear()
         pytest.skip(message)
 
-    def __get_env(self, env: Optional[dict[str, str]]) -> dict[str, str]:
+    def __get_env(self, env: dict[str, str] | None) -> dict[str, str]:
         if env is None:
             env = os.environ.copy()
         for name in ["CFLAGS", "CXXFLAGS"]:
@@ -745,9 +747,9 @@ class GcovrTestExec:
 
     def run(
         self,
-        *args: Union[str, Path],
-        cwd: Optional[Path] = None,
-        env: Optional[dict[str, str]] = None,
+        *args: str | Path,
+        cwd: Path | None = None,
+        env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
         """Run the given arguments."""
         cmd = [str(arg) for arg in args]
@@ -776,7 +778,7 @@ class GcovrTestExec:
     def run_parallel_from_directories(
         self,
         *args: str,
-        env: Optional[dict[str, str]] = None,
+        env: dict[str, str] | None = None,
         cwd: list[Path],
     ) -> None:
         """Run the given arguments."""
@@ -809,9 +811,9 @@ class GcovrTestExec:
 
     def cc(
         self,
-        *args: Union[str, Path],
-        cwd: Optional[Path] = None,
-        launcher: Optional[str] = None,
+        *args: str | Path,
+        cwd: Path | None = None,
+        launcher: str | None = None,
     ) -> None:
         """Run CC with the given arguments."""
         args = (
@@ -825,9 +827,9 @@ class GcovrTestExec:
 
     def cxx(
         self,
-        *args: Union[str, Path],
-        cwd: Optional[Path] = None,
-        launcher: Optional[str] = None,
+        *args: str | Path,
+        cwd: Path | None = None,
+        launcher: str | None = None,
     ) -> None:
         """Run CXX with the given arguments."""
         args = (
@@ -841,12 +843,12 @@ class GcovrTestExec:
 
     def cc_compile(
         self,
-        source: Union[str, Path],
+        source: str | Path,
         *,
-        target: Optional[str] = None,
-        options: Optional[List[str]] = None,
-        cwd: Optional[Path] = None,
-        launcher: Optional[str] = None,
+        target: str | None = None,
+        options: List[str] | None = None,
+        cwd: Path | None = None,
+        launcher: str | None = None,
     ) -> str:
         """Compile the given source and return the target."""
         target = str(Path(source).with_suffix(".o")) if target is None else target
@@ -857,12 +859,12 @@ class GcovrTestExec:
 
     def cxx_compile(
         self,
-        source: Union[str, Path],
+        source: str | Path,
         *,
-        target: Optional[str] = None,
-        options: Optional[List[str]] = None,
-        cwd: Optional[Path] = None,
-        launcher: Optional[str] = None,
+        target: str | None = None,
+        options: List[str] | None = None,
+        cwd: Path | None = None,
+        launcher: str | None = None,
     ) -> str:
         """Compile the given source and return the target."""
         target = str(Path(source).with_suffix(".o")) if target is None else target
@@ -873,10 +875,10 @@ class GcovrTestExec:
 
     def cc_link(
         self,
-        executable: Union[str, Path],
-        *args: Union[str, Path],
-        cwd: Optional[Path] = None,
-        launcher: Optional[str] = None,
+        executable: str | Path,
+        *args: str | Path,
+        cwd: Path | None = None,
+        launcher: str | None = None,
     ) -> None:
         """Link the given objects and return the full path of the executable."""
         self.cc(*args, "-o", executable, cwd=cwd, launcher=launcher)
@@ -884,18 +886,18 @@ class GcovrTestExec:
     def cxx_link(
         self,
         executable: str,
-        *args: Union[str, Path],
-        cwd: Optional[Path] = None,
-        launcher: Optional[str] = None,
+        *args: str | Path,
+        cwd: Path | None = None,
+        launcher: str | None = None,
     ) -> None:
         """Link the given objects and return the full path of the executable."""
         self.cxx(*args, "-o", executable, cwd=cwd, launcher=launcher)
 
     def gcovr(
         self,
-        *args: Union[str, Path],
-        cwd: Optional[Path] = None,
-        env: Optional[dict[str, str]] = None,
+        *args: str | Path,
+        cwd: Path | None = None,
+        env: dict[str, str] | None = None,
         use_main: bool = False,
     ) -> subprocess.CompletedProcess[str]:
         """Run GCOVR with the given arguments"""
@@ -916,11 +918,16 @@ class GcovrTestExec:
         else:
             return self.run("gcovr", *args, cwd=cwd, env=env)
 
-    # Compare methods for our own formats
+    def __check_and_update_marker(self, required_marker: str) -> None:
+        if not any(m.name == required_marker for m in self.markers):
+            raise RuntimeError(f"Marker '{required_marker}' not found in test markers.")
+        self.markers = [m for m in self.markers if m.name != required_marker]
 
+    # Compare methods for our own formats
     def compare_csv(self) -> None:
         """Compare the CSV output files."""
         with self.check:
+            self.__check_and_update_marker("csv")
             self._compare.compare_files(
                 output_pattern=["coverage*.csv"],
                 translate_new_line=False,
@@ -929,20 +936,15 @@ class GcovrTestExec:
     def compare_json(self) -> None:
         """Compare the JSON output files."""
         with self.check:
+            self.__check_and_update_marker("json")
             self._compare.compare_files(
                 output_pattern=["coverage*.json"],
-            )
-
-    def compare_json_summary(self) -> None:
-        """Compare the JSON summary output files."""
-        with self.check:
-            self._compare.compare_files(
-                output_pattern=["coverage_summary*.json"],
             )
 
     def compare_html(self, encoding: str = "utf8") -> None:
         """Compare the HTML report files."""
         with self.check:
+            self.__check_and_update_marker("html")
             self._compare.compare_files(
                 output_pattern=["coverage*.html", "coverage*.js", "coverage*.css"],
                 encoding=encoding,
@@ -951,6 +953,7 @@ class GcovrTestExec:
     def compare_txt(self) -> None:
         """Compare the text output files."""
         with self.check:
+            self.__check_and_update_marker("txt")
             self._compare.compare_files(
                 output_pattern=["coverage*.txt"],
                 scrub=self._compare.scrub_txt,
@@ -959,6 +962,7 @@ class GcovrTestExec:
     def compare_markdown(self) -> None:
         """Compare the markdown output files."""
         with self.check:
+            self.__check_and_update_marker("markdown")
             self._compare.compare_files(
                 output_pattern=["coverage*.md"],
             )
@@ -968,6 +972,7 @@ class GcovrTestExec:
     def compare_clover(self) -> None:
         """Compare the clover output files."""
         with self.check:
+            self.__check_and_update_marker("clover")
             self._compare.compare_files(
                 output_pattern=["clover*.xml"],
                 scrub=self._compare.scrub_xml,
@@ -976,6 +981,7 @@ class GcovrTestExec:
     def compare_cobertura(self) -> None:
         """Compare the cobertura output files."""
         with self.check:
+            self.__check_and_update_marker("cobertura")
             self._compare.compare_files(
                 output_pattern=["cobertura*.xml"],
                 scrub=self._compare.scrub_cobertura,
@@ -984,6 +990,7 @@ class GcovrTestExec:
     def compare_coveralls(self) -> None:
         """Compare the coveralls output files."""
         with self.check:
+            self.__check_and_update_marker("coveralls")
             self._compare.compare_files(
                 output_pattern=["coveralls*.json"],
                 scrub=self._compare.scrub_coveralls,
@@ -992,6 +999,7 @@ class GcovrTestExec:
     def compare_jacoco(self) -> None:
         """Compare the jacoco output files."""
         with self.check:
+            self.__check_and_update_marker("jacoco")
             self._compare.compare_files(
                 output_pattern=["jacoco*.xml"],
                 scrub=self._compare.scrub_xml,
@@ -1000,6 +1008,7 @@ class GcovrTestExec:
     def compare_lcov(self) -> None:
         """Compare the LCOV output files."""
         with self.check:
+            self.__check_and_update_marker("lcov")
             self._compare.compare_files(
                 output_pattern=["coverage*.lcov"],
                 scrub=self._compare.scrub_lcov,
@@ -1008,8 +1017,18 @@ class GcovrTestExec:
     def compare_sonarqube(self) -> None:
         """Compare the sonarqube output files."""
         with self.check:
+            self.__check_and_update_marker("sonarqube")
             self._compare.compare_files(
                 output_pattern=["sonarqube*.xml"],
+            )
+
+    def raise_not_used_markers(self) -> None:
+        """Must be called at the end of the test to get the markers which were not used."""
+
+        if self.markers:
+            raise AssertionError(
+                "Following markers were not used: "
+                + ", ".join(m.name for m in self.markers)
             )
 
 
@@ -1039,6 +1058,11 @@ def gcovr_test_exec(  # type: ignore[no-untyped-def]
                 test_id=test_id,
                 capsys=capsys,
                 check=check,
+                markers=[
+                    m
+                    for m in request.node.iter_markers()
+                    if m.name not in ("skipif", "parametrize")
+                ],
                 compare=GcovrTestCompare(
                     output_dir=output_dir,
                     test_id=test_id,
@@ -1051,4 +1075,5 @@ def gcovr_test_exec(  # type: ignore[no-untyped-def]
             test_exec.copy_source()
 
             yield test_exec
+            test_exec.raise_not_used_markers()
             test_exec._compare.raise_not_compared_reference_files()

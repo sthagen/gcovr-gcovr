@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -22,7 +22,7 @@ import re
 import sys
 
 from argparse import ArgumentError, ArgumentParser, Namespace
-from typing import Any, Optional
+from typing import Any
 import traceback
 
 from .configuration import (
@@ -175,14 +175,14 @@ def create_argument_parser() -> ArgumentParser:
 
 
 COPYRIGHT = (
-    "Copyright (c) 2013-2025 the gcovr authors\n"
+    "Copyright (c) 2013-2026 the gcovr authors\n"
     "Copyright (c) 2013 Sandia Corporation.\n"
     "Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,\n"
     "the U.S. Government retains certain rights in this software.\n"
 )
 
 
-def find_config_name(root: str, filename: str) -> Optional[str]:
+def find_config_name(root: str, filename: str) -> str | None:
     """Find the configuration to use."""
     if root:
         filename = os.path.join(root, filename)
@@ -221,7 +221,7 @@ def load_config(partial_options: Namespace) -> dict[str, Any]:
     return {}
 
 
-def main(args: Optional[list[str]] = None) -> int:  # pylint: disable=too-many-return-statements
+def main(args: list[str] | None = None) -> int:  # pylint: disable=too-many-return-statements
     """The main entry point of GCOVR."""
     configure_logging()
     try:
@@ -324,7 +324,7 @@ def main(args: Optional[list[str]] = None) -> int:  # pylint: disable=too-many-r
     def _setup_filter(
         option: str,
         patterns: list[FilterOption],
-        default_filter: Optional[Filter] = None,
+        default_filter: Filter | None = None,
     ) -> tuple[Filter, ...]:
         """Setup a filter and handle the exception."""
         try:

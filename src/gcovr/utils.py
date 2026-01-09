@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -21,7 +21,7 @@ import gzip
 from hashlib import md5
 import json
 import lzma
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Iterator
 import os
 import functools
 import re
@@ -197,7 +197,7 @@ def commonpath(files: list[str]) -> str:
 
 @contextmanager
 def open_text_for_writing(
-    filename: Optional[str], default_filename: Optional[str] = None, **kwargs: Any
+    filename: str | None, default_filename: str | None = None, **kwargs: Any
 ) -> Iterator[Any]:
     """Context manager to open and close a file for text writing.
 
@@ -234,7 +234,7 @@ def open_text_for_writing(
 
 @contextmanager
 def open_binary_for_writing(
-    filename: Optional[str],
+    filename: str | None,
     default_filename: str,
     **kwargs: Any,
 ) -> Iterator[Any]:
@@ -264,7 +264,7 @@ def write_json_output(
     json_dict: dict[str, Any],
     *,
     pretty: bool,
-    filename: Optional[str],
+    filename: str | None,
     default_filename: str,
     **kwargs: Any,
 ) -> None:
@@ -276,9 +276,9 @@ def write_json_output(
 def write_xml_output(
     root: Any,
     *,
-    doctype: Optional[str] = None,
+    doctype: str | None = None,
     pretty: bool,
-    filename: Optional[str],
+    filename: str | None,
     default_filename: str,
     **kwargs: Any,
 ) -> None:

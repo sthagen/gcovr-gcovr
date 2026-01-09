@@ -2,12 +2,12 @@
 
 #  ************************** Copyrights and license ***************************
 #
-# This file is part of gcovr 8.4+main, a parsing and reporting tool for gcov.
+# This file is part of gcovr 8.5+main, a parsing and reporting tool for gcov.
 # https://gcovr.com/en/main
 #
 # _____________________________________________________________________________
 #
-# Copyright (c) 2013-2025 the gcovr authors
+# Copyright (c) 2013-2026 the gcovr authors
 # Copyright (c) 2013 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -18,11 +18,7 @@
 # ****************************************************************************
 
 from __future__ import annotations
-from typing import (
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import TypeVar
 from dataclasses import dataclass
 
 from ..options import Options
@@ -65,9 +61,9 @@ class SummarizedStats:
 
     def serialize(
         self, default_percent: _T, options: Options
-    ) -> dict[str, Union[int, float, _T]]:
+    ) -> dict[str, int | float | _T]:
         """Serialize the object."""
-        data_dict = dict[str, Union[int, float, _T]](
+        data_dict = dict[str, int | float | _T](
             {
                 "line_total": self.line.total,
                 "line_covered": self.line.covered,
@@ -125,11 +121,11 @@ class CoverageStat:
         return self.total_with_excluded - self.excluded
 
     @property
-    def percent(self) -> Optional[float]:
+    def percent(self) -> float | None:
         """Percentage of covered elements, equivalent to ``self.percent_or(None)``"""
         return self.percent_or(None)
 
-    def percent_or(self, default: _T) -> Union[float, _T]:
+    def percent_or(self, default: _T) -> float | _T:
         """Percentage of covered elements.
 
         Coverage is truncated to one decimal:
@@ -186,11 +182,11 @@ class DecisionCoverageStat:
         )
 
     @property
-    def percent(self) -> Optional[float]:
+    def percent(self) -> float | None:
         """Return the percent value of the coverage."""
         return self.to_coverage_stat.percent
 
-    def percent_or(self, default: _T) -> Union[float, _T]:
+    def percent_or(self, default: _T) -> float | _T:
         """Return the percent value of the coverage or the given default if no coverage is present."""
         return self.to_coverage_stat.percent_or(default)
 
