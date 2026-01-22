@@ -12,9 +12,16 @@ Breaking changes:
 
 New features and notable changes:
 
+- Improve HTML report:
+
+  - Improve wrapping of the counter in the default theme. (:issue:`1236`)
+  - Replace meter with ``div`` elements in the default theme (like in GitHub themes). (:issue:`1236`)
+
 Bug fixes and small improvements:
 
 Documentation:
+
+- Add section about ``gcov`` options which should not be used to FAQ. (:issue:`1237`)
 
 Internal changes:
 
