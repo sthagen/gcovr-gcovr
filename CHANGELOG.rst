@@ -17,13 +17,15 @@ New features and notable changes:
   - Improve wrapping of the counter in the default theme. (:issue:`1236`)
   - Replace meter with ``div`` elements in the default theme (like in GitHub themes). (:issue:`1236`)
   - Add jinja2 rendering for CSS files. (:issue:`1252`)
-  - Add new HTML themes ``boost.green`` and ``boost.blue``. (:issue:`1248`)
+  - Add new HTML themes ``boost.green`` and ``boost.blue``. (:issue:`1248`, :issue:`1271`)
 
 - Add compare mode for JSON, text and HTML reports. (:issue:`1240`, :issue:`1266`)
 - Stub missing line coverage for branches in LLVM source based code coverage format. (:issue:`1245`)
 - Add support for TOML files with :option:`--config` (:issue:`1258`)
 
 Bug fixes and small improvements:
+
+- Fix runtime problem introduced with 8.4. (:issue:`1270`)
 
 Documentation:
 
@@ -40,6 +42,10 @@ Internal changes:
 
 8.6 (13 January 2026)
 ---------------------
+
+Known bugs:
+
+- :ref:`fix_1270`
 
 Breaking changes:
 
@@ -65,6 +71,7 @@ Known bugs:
 
 - :ref:`fix_1229`
 - :ref:`fix_1231`
+- :ref:`fix_1270`
 
 Breaking changes:
 
@@ -169,6 +176,7 @@ Known bugs:
 - :ref:`fix_1197`
 - :ref:`fix_1206_1`
 - :ref:`fix_1206_2`
+- :ref:`fix_1270`
 
 Breaking changes:
 
