@@ -2,10 +2,7 @@
 {# Check if we have any function or branch data #}
 {% set has_functions = entries | selectattr('functions.coverage', 'ne', '-') | list | length > 0 %}
 {% set has_branches = entries | selectattr('branches.coverage', 'ne', '-') | list | length > 0 %}
-{% set has_conditions = SHOW_CONDITION_COVERAGE and (entries | selectattr('conditions.coverage', 'ne', '-') | list | length > 0) %}
-{% set has_decisions = SHOW_DECISION and (entries | selectattr('decisions.coverage', 'ne', '-') | list | length > 0) %}
-{% set has_calls = SHOW_CALLS and (entries | selectattr('calls.coverage', 'ne', '-') | list | length > 0) %}
-<div class="file-list-container{% if not has_functions %} no-functions{% endif %}{% if not has_branches %} no-branches{% endif %}{% if not has_conditions %} no-conditions{% endif %}{% if not has_decisions %} no-decisions{% endif %}{% if not has_calls %} no-calls{% endif %}">
+<div class="file-list-container{% if not has_functions %} no-functions{% endif %}{% if not has_branches %} no-branches{% endif %}{% if not SHOW_CONDITION_COVERAGE %} no-conditions{% endif %}{% if not SHOW_DECISION %} no-decisions{% endif %}{% if not SHOW_CALLS %} no-calls{% endif %}">
   <div class="file-list-header">
     <div class="col-name sortable{% if info.sort_by == 'filename' %} {{info.sorted}}{% endif %}" data-sort="filename">
       Name
@@ -26,17 +23,17 @@
       Branches
     </div>
     {% endif %}
-    {% if has_conditions %}
+    {% if SHOW_CONDITION_COVERAGE %}
     <div class="col-conditions sortable" data-sort="conditions">
       Conditions
     </div>
     {% endif %}
-    {% if has_decisions %}
+    {% if SHOW_DECISION %}
     <div class="col-decisions sortable" data-sort="decisions">
       Decisions
     </div>
     {% endif %}
-    {% if has_calls %}
+    {% if SHOW_CALLS %}
     <div class="col-calls sortable" data-sort="calls">
       Calls
     </div>
@@ -53,7 +50,7 @@
       {# Extract clean display name: just filename or last path segment #}
       {% set clean_path = row.filename.rstrip('/') %}
       {% set display_name = clean_path.split('/')[0] if '/' in clean_path else clean_path %}
-      {% set display_name = display_name if display_name else row.filename %}
+      {% set display_name = display_name if (display_name and info.html_nested) else row.filename %}
       {% set is_file = '.' in display_name and not display_name.endswith('...') %}
     <div class="file-row {% if is_file %}file{% else %}directory{% endif %}"
          data-filename="{{row.filename}}"
@@ -80,7 +77,7 @@
          data-diff="{{row.diff}}">
       <div class="col-name">
         <span class="file-icon">
-          {% if row.link is none %}
+          {% if row.link is none and not is_file %}
           <svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25v-8.5A1.75 1.75 0 0014.25 3H7.5a.25.25 0 01-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75z"></path></svg>
           {% elif is_file %}
           <svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M3.75 1.5a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 00.25-.25V6h-2.75A1.75 1.75 0 019 4.25V1.5H3.75zm6.75.062V4.25c0 .138.112.25.25.25h2.688a.252.252 0 00-.011-.013l-2.914-2.914a.272.272 0 00-.013-.011zM2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0113.25 16h-9.5A1.75 1.75 0 012 14.25V1.75z"></path></svg>
@@ -117,17 +114,17 @@
         <span class="stat-value {{row.branches.class}}">{% if row.branches.coverage != '-' %}{{row.branches.coverage}}%{% else %}-{% endif %}</span>
       </div>
       {% endif %}
-      {% if has_conditions %}
+      {% if SHOW_CONDITION_COVERAGE %}
       <div class="col-conditions">
         <span class="stat-value {{row.conditions.class}}">{% if row.conditions.coverage != '-' %}{{row.conditions.coverage}}%{% else %}-{% endif %}</span>
       </div>
       {% endif %}
-      {% if has_decisions %}
+      {% if SHOW_DECISION %}
       <div class="col-decisions">
         <span class="stat-value {{row.decisions.class}}">{% if row.decisions.coverage != '-' %}{{row.decisions.coverage}}%{% else %}-{% endif %}</span>
       </div>
       {% endif %}
-      {% if has_calls %}
+      {% if SHOW_CALLS %}
       <div class="col-calls">
         <span class="stat-value {{row.calls.class}}">{% if row.calls.coverage != '-' %}{{row.calls.coverage}}%{% else %}-{% endif %}</span>
       </div>

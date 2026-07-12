@@ -31,6 +31,7 @@ from jinja2 import (
     FileSystemLoader,
     FunctionLoader,
     PackageLoader,
+    StrictUndefined,
     Template,
 )
 from markupsafe import Markup
@@ -132,6 +133,7 @@ def user_templates() -> Environment:
         autoescape=True,
         trim_blocks=True,
         lstrip_blocks=True,
+        undefined=StrictUndefined,
     )
 
 
@@ -148,10 +150,10 @@ class CssRenderer:
         return templates(options).get_template("style.css")
 
     @staticmethod
-    def render(options: Options, root_info: "RootInfo") -> str:
+    def render(options: Options, **data: dict[Any, Any]) -> str:
         """Get the rendered CSS content."""
         template = CssRenderer.__load_css_template(options)
-        return template.render(tab_size=options.html_tab_size, info=root_info)
+        return template.render(tab_size=options.html_tab_size, **data)
 
 
 class NullHighlighting:
@@ -294,6 +296,8 @@ class RootInfo:
         ) and not (options.html_single_page and options.html_static_report)
         self.relative_anchors = options.html_relative_anchors
         self.single_page = options.html_single_page
+        self.html_details = options.html_details is not None
+        self.html_nested = options.html_nested is not None
         self.static_report = options.html_static_report
         self.diff_report = diff_report
 
@@ -541,7 +545,7 @@ def write_report(
             data["GCOVR_TREE_DATA"] = covdata.properties["tree_data"]["children"]
 
     LOGGER.debug("Render CSS file...")
-    css_data = CssRenderer.render(options, root_info).strip()
+    css_data = CssRenderer.render(options, **data).strip()
     if PYGMENTS_CSS_MARKER in css_data:
         LOGGER.info(
             "Skip adding of pygments styles since %r found in user stylesheet",
@@ -983,6 +987,8 @@ def get_file_data(
             f_data["line_coverage"] = function_stats.line.percent_or(100.0)
             f_data["branch_coverage"] = function_stats.branch.percent_or("-")
             f_data["condition_coverage"] = function_stats.condition.percent_or("-")
+            f_data["decision_coverage"] = function_stats.decision.percent_or("-")
+            f_data["call_coverage"] = function_stats.call.percent_or("-")
 
             file_data["function_list"].append(f_data)
             functions[

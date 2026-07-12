@@ -10,6 +10,9 @@ Next Release
 
 Breaking changes:
 
+- Jinja2 environment for HTML reports is now created with ``undefined=StrictUndefined`` to raise an
+  error if a variable is not defined in the template. (:issue:`1282`)
+
 New features and notable changes:
 
 - Improve HTML report:
@@ -26,6 +29,8 @@ New features and notable changes:
 Bug fixes and small improvements:
 
 - Fix runtime problem introduced with 8.4. (:issue:`1270`)
+- Fix boost HTML details and simple output. (:issue:`1274`)
+- Fix boost HTML support for Conditions, Decisions and Calls optional stats. (:issue:`1277`)
 
 Documentation:
 
