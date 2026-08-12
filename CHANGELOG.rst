@@ -35,6 +35,7 @@ Bug fixes and small improvements:
 - Add excluded metrics to boost HTML template (:issue:`1280`)
 - Fix alignment in summary header of HTML single page report. (:issue:`1284`)
 - Fix link to lines in HTML single page report. (:issue:`1285`)
+- Preserve coverage for procedures declared in Fortran modules. (:issue:`1288`)
 
 Documentation:
 
