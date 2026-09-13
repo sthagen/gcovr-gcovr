@@ -19,6 +19,7 @@
 
 import logging
 import os
+
 from ...data_model.container import CoverageContainer
 from ...formats.base import BaseHandler
 from ...options import GcovrConfigOption
@@ -86,7 +87,9 @@ class LlvmHandler(BaseHandler):
             raise ValueError("A LLVM report is not possible with --json-compare.")
 
     def read_report(self) -> CoverageContainer:
-        from .read import read_report  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+        from .read import (  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+            read_report,
+        )
 
         # This can't be checked during validation of arguments because it's not needed together with the
         # tracefiles

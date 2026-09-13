@@ -18,21 +18,21 @@
 # ****************************************************************************
 
 # cspell:ignore addoption
-from contextlib import contextmanager
 import difflib
 import fnmatch
 import logging
 import os
-from pathlib import Path
 import platform
 import re
 import shlex
 import shutil
 import subprocess  # nosec: B404
+import zipfile
+from contextlib import contextmanager
+from pathlib import Path
 from sys import stderr, stdout
 from typing import Callable, Generator, List, NoReturn
 from unittest import mock
-import zipfile
 
 import pytest
 from lxml import etree  # nosec # Data is trusted.
@@ -122,13 +122,14 @@ USE_GCC_JSON_INTERMEDIATE_FORMAT = (
 )
 USE_PROFDATA_POSSIBLE = IS_LINUX and not IS_GCC
 GCOVR_TEST_USE_CXX_LAMBDA_EXPRESSIONS = "c++20" in _CC_HELP_OUTPUT
+CONDITION_COVERAGE_POSSIBLE = "condition-coverage" in _CC_HELP_OUTPUT
 
 _CFLAGS = [
     "-fPIC",
     "-fprofile-arcs",
     "-ftest-coverage",
 ]
-if "condition-coverage" in _CC_HELP_OUTPUT:
+if CONDITION_COVERAGE_POSSIBLE:
     _CFLAGS.append("-fcondition-coverage")
 
 _CFLAGS_PROFDATA = [

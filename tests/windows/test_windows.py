@@ -17,11 +17,11 @@
 #
 # ****************************************************************************
 
-from contextlib import contextmanager
-from pathlib import Path
 import platform
 import sys
 import typing
+from contextlib import contextmanager
+from pathlib import Path
 
 import pytest
 
@@ -32,8 +32,9 @@ if typing.TYPE_CHECKING:
 @contextmanager
 def subst(gcovr_test_exec: "GcovrTestExec") -> typing.Iterator[Path]:
     """Subst the path to a drive and return it."""
-    import win32api
     import string
+
+    import win32api
 
     used_drives = [e[:-1] for e in win32api.GetLogicalDriveStrings().split("\0")]
     sys.stdout.write(f"Used drives: {', '.join(used_drives)}")

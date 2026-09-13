@@ -18,13 +18,14 @@
 # ****************************************************************************
 
 from __future__ import annotations
-from abc import abstractmethod
-from argparse import ArgumentParser, ArgumentTypeError, Namespace
+
 import argparse
+import os
 import platform
 import re
-from typing import Any, Type, Callable
-import os
+from abc import abstractmethod
+from argparse import ArgumentParser, ArgumentTypeError, Namespace
+from typing import Any, Callable, Type
 
 from .filter import AbsoluteFilter, Filter, RelativeFilter
 from .logging import LOGGER

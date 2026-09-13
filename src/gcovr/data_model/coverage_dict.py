@@ -18,10 +18,10 @@
 # ****************************************************************************
 
 from __future__ import annotations
+
 from typing import TypeVar
 
 from .merging import MergeOptions
-
 
 LinecovCollectionKeyType = int
 LinecovKeyType = str

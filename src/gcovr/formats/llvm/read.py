@@ -30,27 +30,26 @@ The behavior of this parser was informed by the following sources:
   <https://releases.llvm.org/18.1.8/docs/CoverageMappingFormat.html>
 """
 
-from dataclasses import dataclass
-from enum import Enum
 import json
 import logging
 import os
 import re
 import shlex
 import subprocess  # nosec
+from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
-
-from ...exclusions import apply_all_exclusions, get_exclusion_options_from_options
-from ...filter import is_file_excluded
 from ...data_model.container import CoverageContainer
 from ...data_model.coverage import FileCoverage
 from ...data_model.merging import (
-    get_merge_mode_from_options,
     FUNCTION_MAX_LINE_MERGE_OPTIONS,
     MergeOptions,
+    get_merge_mode_from_options,
 )
 from ...decision_analysis import DecisionParser
+from ...exclusions import apply_all_exclusions, get_exclusion_options_from_options
+from ...filter import is_file_excluded
 from ...options import Options
 from ...utils import get_md5_hexdigest, read_source_file, search_file, write_json_output
 

@@ -20,10 +20,10 @@
 # pylint: disable=missing-function-docstring,missing-module-docstring
 # cspell:ignore getpreferredencoding
 
-from locale import getpreferredencoding
 import logging
 import re
 import textwrap
+from locale import getpreferredencoding
 from threading import Event
 from unittest import mock
 

@@ -19,7 +19,6 @@
 
 import pytest
 
-
 from tests.conftest import IS_WINDOWS, GcovrTestExec
 
 

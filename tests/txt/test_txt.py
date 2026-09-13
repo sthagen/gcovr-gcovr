@@ -20,11 +20,11 @@
 import pytest
 
 from tests.conftest import (
-    GcovrTestExec,
-    IS_LINUX,
+    CC_VERSION,
     IS_DARWIN,
     IS_GCC,
-    CC_VERSION,
+    IS_LINUX,
+    GcovrTestExec,
 )
 
 SKIP_TEST = not IS_LINUX and not (IS_DARWIN and not IS_GCC and CC_VERSION == 17)

@@ -17,16 +17,17 @@
 #
 # ****************************************************************************
 
+import functools
 import gzip
-from hashlib import md5
 import json
 import lzma
-from typing import Any, BinaryIO, Callable, Iterator, TextIO
 import os
-import functools
 import re
 import sys
 from contextlib import contextmanager
+from hashlib import md5
+from typing import Any, BinaryIO, Callable, Iterator, TextIO
+
 from lxml import etree  # nosec # We only write XML files
 
 from .logging import LOGGER

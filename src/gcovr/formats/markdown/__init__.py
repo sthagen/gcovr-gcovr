@@ -21,7 +21,6 @@ from ...data_model.container import CoverageContainer
 from ...formats.base import BaseHandler
 from ...options import GcovrConfigOption, OutputOrDefault
 
-
 THEMES = (
     "green",
     "blue",
@@ -129,13 +128,17 @@ class MarkdownHandler(BaseHandler):
             raise RuntimeError("The markdown heading level must not be less than 0.")
 
     def write_report(self, covdata: CoverageContainer, output_file: str) -> None:
-        from .write import write_report  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+        from .write import (  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+            write_report,
+        )
 
         write_report(covdata, output_file, self.options)
 
     def write_summary_report(
         self, covdata: CoverageContainer, output_file: str
     ) -> None:
-        from .write import write_summary_report  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+        from .write import (  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+            write_summary_report,
+        )
 
         write_summary_report(covdata, output_file, self.options)

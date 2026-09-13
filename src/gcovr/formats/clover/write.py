@@ -20,6 +20,7 @@
 # cspell:ignore coveredelements coveredconditionals coveredmethods
 
 from dataclasses import dataclass
+
 from lxml import etree  # nosec # We only write XML files
 
 from ...data_model.container import CoverageContainer

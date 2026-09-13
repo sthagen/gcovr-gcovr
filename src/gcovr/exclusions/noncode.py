@@ -26,7 +26,6 @@ import re
 from ..data_model.coverage import FileCoverage
 from ..logging import LOGGER
 
-
 _C_STYLE_COMMENT_PATTERN = re.compile(r"/\*.*?\*/")
 _CPP_STYLE_COMMENT_PATTERN = re.compile(r"//.*?$")
 _WHITESPACE_PATTERN = re.compile(r"\s+")

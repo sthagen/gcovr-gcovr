@@ -21,19 +21,17 @@
 Handle explicit exclusion markers in source code, e.g. ``GCOVR_EXCL_LINE``.
 """
 
-from typing import Callable
 import re
-
-from .utils import (
-    make_is_in_any_range_inclusive,
-    apply_exclusion_ranges,
-    get_function_exclude_ranges,
-    get_functions_by_line,
-)
+from typing import Callable
 
 from ..data_model.coverage import FileCoverage, FunctionCoverage
 from ..logging import LOGGER
-
+from .utils import (
+    apply_exclusion_ranges,
+    get_function_exclude_ranges,
+    get_functions_by_line,
+    make_is_in_any_range_inclusive,
+)
 
 _EXCLUDE_FLAG = "_EXCL_"
 _EXCLUDE_PATTERN_LINE = ""

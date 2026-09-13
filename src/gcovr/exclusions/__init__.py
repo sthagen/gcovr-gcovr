@@ -26,24 +26,22 @@ Alternatively, they full suite of exclusion rules can be invoked
 via ``apply_all_exclusions()``, which is configured via the usual options object.
 """
 
-from dataclasses import dataclass, field
 import os
 import re
+from dataclasses import dataclass, field
 
 from ..data_model.coverage import FileCoverage
 from ..logging import LOGGER
 from ..options import Options
-
 from .markers import ExclusionPredicate, FunctionListByLine, apply_exclusion_markers
-from .noncode import remove_unreachable_branches, remove_noncode_lines
+from .noncode import remove_noncode_lines, remove_unreachable_branches
 from .utils import (
-    make_is_in_any_range_inclusive,
     apply_exclusion_ranges,
     function_exclude_not_supported,
     get_function_exclude_ranges,
     get_functions_by_line,
+    make_is_in_any_range_inclusive,
 )
-
 
 _FORTRAN_SOURCE_SUFFIXES = frozenset(
     {".f", ".for", ".ftn", ".fpp", ".f90", ".f95", ".f03", ".f08", ".f18"}

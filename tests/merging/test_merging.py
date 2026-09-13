@@ -18,13 +18,12 @@
 # ****************************************************************************
 
 import logging
-from pathlib import Path
 import re
 import subprocess  # nosec
 import typing
+from pathlib import Path
 
 import pytest
-
 
 from tests.conftest import IS_LINUX, GcovrTestExec
 

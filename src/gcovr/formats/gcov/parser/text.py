@@ -44,7 +44,6 @@ from ....data_model.merging import FUNCTION_MAX_LINE_MERGE_OPTIONS, MergeOptions
 from ....exceptions import SanityCheckError
 from ....logging import LOGGER
 from ....utils import get_md5_hexdigest
-
 from .common import (
     SUSPICIOUS_COUNTER,
     check_hits,

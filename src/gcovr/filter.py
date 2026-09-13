@@ -18,9 +18,9 @@
 # ****************************************************************************
 
 import functools
+import os
 import platform
 import re
-import os
 
 from .logging import LOGGER
 from .utils import force_unix_separator, is_fs_case_insensitive

@@ -17,9 +17,9 @@
 #
 # ****************************************************************************
 
-from pathlib import Path
 import re
 import shutil
+from pathlib import Path
 from sys import stderr
 from unittest import mock
 

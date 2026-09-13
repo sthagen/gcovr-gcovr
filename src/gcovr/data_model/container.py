@@ -18,6 +18,7 @@
 # ****************************************************************************
 
 from __future__ import annotations
+
 import os
 import re
 from typing import Any, Iterator, Literal, ValuesView, overload
@@ -26,7 +27,6 @@ from ..filter import is_file_excluded
 from ..logging import LOGGER
 from ..options import Options
 from ..utils import commonpath, force_unix_separator
-
 from .coverage import CoverageDiff, FileCoverage, summarize_coverage_diff
 from .coverage_dict import CoverageDict
 from .merging import MergeOptions
@@ -436,13 +436,25 @@ class CoverageContainer:
         return self._stats
 
     def line_coverage(self) -> CoverageStat:
-        """A simple wrapper function necessary for sort_filecov()."""
+        """Get the accumulated line coverage statistics."""
         return self.stats.line
 
     def branch_coverage(self) -> CoverageStat:
-        """A simple wrapper function necessary for sort_filecov()."""
+        """Get the accumulated branch coverage statistics."""
         return self.stats.branch
 
+    def condition_coverage(self) -> CoverageStat:
+        """Get the accumulated condition coverage statistics."""
+        return self.stats.condition
+
     def decision_coverage(self) -> DecisionCoverageStat:
-        """A simple wrapper function necessary for sort_filecov()."""
+        """Get the accumulated decision coverage statistics."""
         return self.stats.decision
+
+    def function_coverage(self) -> CoverageStat:
+        """Get the accumulated function coverage statistics."""
+        return self.stats.function
+
+    def call_coverage(self) -> CoverageStat:
+        """Get the accumulated calls coverage statistics."""
+        return self.stats.call

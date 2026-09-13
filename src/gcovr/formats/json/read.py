@@ -22,11 +22,10 @@ import json
 import os
 from glob import glob
 
-from ...filter import is_file_excluded
-
 from ...data_model import version
 from ...data_model.container import CoverageContainer
 from ...data_model.merging import get_merge_mode_from_options
+from ...filter import is_file_excluded
 from ...logging import LOGGER
 from ...options import Options
 from ...utils import GZIP_SUFFIX

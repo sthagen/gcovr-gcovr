@@ -17,8 +17,9 @@
 #
 # ****************************************************************************
 
-from pathlib import Path
 import typing
+from pathlib import Path
+
 import pytest
 
 if typing.TYPE_CHECKING:

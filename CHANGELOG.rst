@@ -10,7 +10,7 @@ Next Release
 
 Breaking changes:
 
-- Jinja2 environment for HTML reports is now created with ``undefined=StrictUndefined`` to raise an
+- Jinja2 environment for HTML report is now created with ``undefined=StrictUndefined`` to raise an
   error if a variable is not defined in the template. (:issue:`1282`, :issue:`1283`)
 - Links to lines in HTML reports now use ``L<line>`` instead of a ``l<line>``. (:issue:`1285`)
 
@@ -22,10 +22,13 @@ New features and notable changes:
   - Replace meter with ``div`` elements in the default theme (like in GitHub themes). (:issue:`1236`)
   - Add jinja2 rendering for CSS files. (:issue:`1252`)
   - Add new HTML themes ``boost.green`` and ``boost.blue``. (:issue:`1248`, :issue:`1271`)
+  - Show excluded lines, branches, ... in the summary only if there are any. (:issue:`1287`)
 
 - Add compare mode for JSON, text and HTML reports. (:issue:`1240`, :issue:`1266`)
 - Stub missing line coverage for branches in LLVM source based code coverage format. (:issue:`1245`)
 - Add support for TOML files with :option:`--config` (:issue:`1258`)
+- Add :option:`--fail-under-condition-or-decision` with :option:`--fail-under-condition` and
+  :option:`--fail-under-decision` as synonyms, change the key for the configuration file. (:issue:`1293`)
 
 Bug fixes and small improvements:
 
@@ -48,6 +51,7 @@ Internal changes:
 - Refactor internal data model from a flat list to a tree which matches the folder structure of the
   source files. Also add a properties element which is cleared after each report format to store meta
   data for the report generation and update the dicts in the HTML report to use it. (:issue:`1261`)
+- Activate sorting of includes for ruff. (:issue:`1294`)
 
 .. _release_8_6:
 

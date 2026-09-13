@@ -78,6 +78,8 @@ class SonarqubeHandler(BaseHandler):
             )
 
     def write_report(self, covdata: CoverageContainer, output_file: str) -> None:
-        from .write import write_report  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+        from .write import (  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+            write_report,
+        )
 
         write_report(covdata, output_file, self.options)

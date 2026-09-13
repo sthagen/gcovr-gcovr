@@ -19,22 +19,21 @@
 
 from typing import Callable
 
-from ..data_model.coverage import FileCoverage
 from ..data_model.container import CoverageContainer
+from ..data_model.coverage import FileCoverage
 from ..data_model.merging import get_merge_mode_from_options
 from ..exceptions import SanityCheckError
 from ..filter import is_file_excluded
 from ..logging import LOGGER
 from ..options import GcovrConfigOption, Options, OutputOrDefault
 from ..utils import search_file
-
-
-# the handler
-from .gcov import GcovHandler
 from .clover import CloverHandler
 from .cobertura import CoberturaHandler
 from .coveralls import CoverallsHandler
 from .csv import CsvHandler
+
+# the handler
+from .gcov import GcovHandler
 from .html import HtmlHandler
 from .jacoco import JaCoCoHandler
 from .json import JsonHandler

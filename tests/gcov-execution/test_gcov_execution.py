@@ -17,12 +17,12 @@
 #
 # ****************************************************************************
 
-from contextlib import contextmanager
 import os
-from pathlib import Path
 import re
 import subprocess  # nosec
 import typing
+from contextlib import contextmanager
+from pathlib import Path
 
 import pytest
 
@@ -33,7 +33,6 @@ from tests.conftest import (
     USE_GCC_JSON_INTERMEDIATE_FORMAT,
     GcovrTestExec,
 )
-
 
 CHMOD_IS_WORKING = (
     not GCOVR_ISOLATED_TEST or IS_DARWIN_HOST or USE_GCC_JSON_INTERMEDIATE_FORMAT

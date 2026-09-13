@@ -22,9 +22,9 @@
 import re
 
 from .data_model.coverage import (
-    DecisionCoverageUncheckable,
     DecisionCoverageConditional,
     DecisionCoverageSwitch,
+    DecisionCoverageUncheckable,
     FileCoverage,
     LineCoverage,
 )

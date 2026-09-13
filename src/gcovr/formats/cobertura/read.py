@@ -19,6 +19,7 @@
 
 import os
 from glob import glob
+
 from lxml import etree  # nosec # We only write XML files
 
 from ...data_model.container import CoverageContainer

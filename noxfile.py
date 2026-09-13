@@ -17,21 +17,21 @@
 #
 # ****************************************************************************
 
-from contextlib import ExitStack
 import functools
 import io
 import os
-from pathlib import Path
 import platform
 import re
-from runpy import run_path
+import shutil
 import socket
+import subprocess  # nosec # Commands are trusted.
 import sys
 import textwrap
 import time
-import shutil
-import subprocess  # nosec # Commands are trusted.
 import zipfile
+from contextlib import ExitStack
+from pathlib import Path
+from runpy import run_path
 
 import nox
 
@@ -666,7 +666,7 @@ def html2jpeg(session: nox.Session) -> None:
                     break
                 except requests.exceptions.ConnectionError:
                     retries += 1
-                    if retries == 10:
+                    if retries == 20:
                         session.error("Giving up!")
                     session.log(f"Retry {retries} in 1 second")
                     time.sleep(  # nosemgrep # We need to wait here until server is started.

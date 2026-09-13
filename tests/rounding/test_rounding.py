@@ -17,8 +17,9 @@
 #
 # ****************************************************************************
 
-import pytest
 import typing
+
+import pytest
 
 if typing.TYPE_CHECKING:
     from tests.conftest import GcovrTestExec

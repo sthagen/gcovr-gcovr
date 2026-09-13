@@ -18,8 +18,8 @@
 # ****************************************************************************
 
 import typing
-import pytest
 
+import pytest
 
 if typing.TYPE_CHECKING:
     from tests.conftest import GcovrTestExec

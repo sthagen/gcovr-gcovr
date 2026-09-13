@@ -20,13 +20,13 @@
 # ****************************************************************************
 
 import copy
-import os
+import datetime
 import logging
+import os
 import re
 import subprocess  # nosec # Commands are trusted.
 import sys
 import time
-import datetime
 from typing import Callable, Iterator
 
 SOURCE_DATE_EPOCH = int(time.time())

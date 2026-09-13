@@ -17,12 +17,12 @@
 #
 # ****************************************************************************
 
-from multiprocessing import cpu_count
-from sys import exc_info
-from threading import Thread, Condition, RLock
-from traceback import format_exception
 from contextlib import contextmanager
-from queue import Queue, Empty
+from multiprocessing import cpu_count
+from queue import Empty, Queue
+from sys import exc_info
+from threading import Condition, RLock, Thread
+from traceback import format_exception
 from typing import Any, Callable, Iterator
 
 from ...exceptions import SanityCheckError

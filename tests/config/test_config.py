@@ -18,12 +18,11 @@
 # ****************************************************************************
 
 import logging
-from pathlib import Path
 import shutil
 import typing
+from pathlib import Path
 
 import pytest
-
 
 if typing.TYPE_CHECKING:
     from tests.conftest import GcovrTestExec

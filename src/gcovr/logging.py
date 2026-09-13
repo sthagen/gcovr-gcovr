@@ -20,7 +20,8 @@
 import logging
 import os
 import sys
-from typing import Any, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
+
 from colorlog import ColoredFormatter
 
 if TYPE_CHECKING:

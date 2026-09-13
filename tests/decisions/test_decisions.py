@@ -18,8 +18,8 @@
 # ****************************************************************************
 
 from pathlib import Path
-import pytest
 
+import pytest
 
 from tests.conftest import IS_LINUX, USE_PROFDATA_POSSIBLE, GcovrTestExec
 

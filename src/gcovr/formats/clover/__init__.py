@@ -17,10 +17,9 @@
 #
 # ****************************************************************************
 
-from ...options import GcovrConfigOption, OutputOrDefault
-from ...formats.base import BaseHandler
-
 from ...data_model.container import CoverageContainer
+from ...formats.base import BaseHandler
+from ...options import GcovrConfigOption, OutputOrDefault
 
 
 class CloverHandler(BaseHandler):
@@ -70,6 +69,8 @@ class CloverHandler(BaseHandler):
             raise ValueError("A clover report is not possible with --json-compare.")
 
     def write_report(self, covdata: CoverageContainer, output_file: str) -> None:
-        from .write import write_report  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+        from .write import (  # pylint: disable=import-outside-toplevel # Lazy loading is intended here
+            write_report,
+        )
 
         write_report(covdata, output_file, self.options)

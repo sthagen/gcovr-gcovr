@@ -18,10 +18,10 @@
 # ****************************************************************************
 
 from pathlib import Path
+
 import pytest
 
 from tests.conftest import GCOVR_ISOLATED_TEST, IS_GCC, GcovrTestExec
-
 
 EXAMPLES_DIRECTORY = Path(__file__).parent.parent / "doc" / "examples"
 SHELL_SCRIPTS = [

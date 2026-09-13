@@ -17,10 +17,10 @@
 #
 # ****************************************************************************
 
-from pathlib import Path
 import typing
-import pytest
+from pathlib import Path
 
+import pytest
 
 if typing.TYPE_CHECKING:
     from tests.conftest import GcovrTestExec

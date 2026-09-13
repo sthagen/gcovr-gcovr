@@ -24,7 +24,6 @@ from typing import Callable, Iterable
 from ..data_model.coverage import FileCoverage, FunctionCoverage
 from ..logging import LOGGER
 
-
 ExclusionPredicate = Callable[[int], bool]
 FunctionListByLine = dict[int, list[FunctionCoverage]]
 

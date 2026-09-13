@@ -18,18 +18,19 @@
 # ****************************************************************************
 
 import gzip
-from json import loads as json_loads, dumps as json_dumps
 import os
 import re
 import shlex
 import subprocess  # nosec # Commands are trusted.
+from json import dumps as json_dumps
+from json import loads as json_loads
 from threading import Lock
 from typing import Any, Callable
 
 from ...data_model.container import CoverageContainer
 from ...data_model.merging import get_merge_mode_from_options
-from ...exceptions import SanityCheckError
 from ...decision_analysis import DecisionParser
+from ...exceptions import SanityCheckError
 from ...exclusions import (
     apply_all_exclusions,
     get_exclusion_options_from_options,
